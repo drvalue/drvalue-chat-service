@@ -45,18 +45,36 @@
     // iframe
     var iframe = document.createElement("iframe");
     var match = document.cookie.match(/(?:^|;\s*)PHPSESSID=([^;]+)/);
-    if (match) {
-      console.log("PHPSESSID:", match[1]);
-      // 쿠키값 넘기기
-      iframe.addEventListener("load", function () {
-        iframe.contentWindow.postMessage(
-          { type: "SET_SESSION", phpsessid: match ? match[1] : null },
-          "*"
-        );
-      });
-    } else {
-      console.log("PHPSESSID 쿠키가 없습니다.");
+    var session = match ? match[1] : null;
+
+    var targetOrigin;
+    try {
+      targetOrigin = new URL(botUrl).origin;
+    } catch (_) {
+      targetOrigin = "*";
     }
+
+    function sendSession() {
+      if (!iframe.contentWindow) return;
+      iframe.contentWindow.postMessage(
+        { type: "SET_SESSION", phpsessid: session },
+        targetOrigin
+      );
+    }
+
+    // iframe이 완전히 로드된 뒤 한 번 전송
+    iframe.addEventListener("load", function () {
+      sendSession();
+    });
+
+    // iframe(React)이 "준비됨"을 알려오면 다시 전송 (리스너 등록 후 확실히 전달)
+    window.addEventListener("message", function (e) {
+      if (targetOrigin !== "*" && e.origin !== targetOrigin) return;
+      if (e.data && e.data.type === "WIDGET_READY") {
+        sendSession();
+      }
+    });
+
     iframe.src = botUrl;
     iframe.setAttribute(
       "allow",
