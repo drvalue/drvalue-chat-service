@@ -44,6 +44,19 @@
 
     // iframe
     var iframe = document.createElement("iframe");
+    var match = document.cookie.match(/(?:^|;\s*)PHPSESSID=([^;]+)/);
+    if (match) {
+      console.log("PHPSESSID:", match[1]);
+      // 쿠키값 넘기기
+      iframe.addEventListener("load", function () {
+        iframe.contentWindow.postMessage(
+          { type: "SET_SESSION", phpsessid: match ? match[1] : null },
+          "*"
+        );
+      });
+    } else {
+      console.log("PHPSESSID 쿠키가 없습니다.");
+    }
     iframe.src = botUrl;
     iframe.setAttribute(
       "allow",
