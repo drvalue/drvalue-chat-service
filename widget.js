@@ -7,7 +7,7 @@
   var botUrl = cfg.url || "http://115.68.178.142:90/user/home";
   var color = cfg.color || "#4a90e2";
   var side = cfg.position === "left" ? "left" : "right";
-  var size = cfg.size || { width: 400, height: 600 };
+  var size = cfg.size || { width: 430, height: 650 };
 
   function applyStyles(el, styles) {
     for (var k in styles) {
