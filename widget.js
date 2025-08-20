@@ -5,7 +5,7 @@
 
   var cfg = window.MyChatbotWidget || {};
   var botUrl = cfg.url || "http://115.68.178.142:90/user/home";
-  var color = cfg.color || "#4a90e2";
+  var color = cfg.color || "#F5FAFF";
   var side = cfg.position === "left" ? "left" : "right";
   var size = cfg.size || { width: 430, height: 650 };
 
@@ -21,7 +21,11 @@
   function run() {
     // 버튼
     var btn = document.createElement("div");
-    btn.innerText = "💬";
+    btn.innerText = `
+      <svg width="30" height="30" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+        <path d="M41.3059 24.9773C40.1508 16.4013 ... 30.1789 22.0919Z" fill="#ffbb00"/>
+      </svg>
+    `;
     applyStyles(btn, {
       position: "fixed",
       bottom: "20px",
