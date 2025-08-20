@@ -19,6 +19,9 @@
   }
 
   function run() {
+    // 버튼
+    var btn = document.createElement("div");
+
     var svgNS = "http://www.w3.org/2000/svg";
     var svg = document.createElementNS(svgNS, "svg");
     svg.setAttribute("width", "30");
@@ -34,8 +37,6 @@
     svg.appendChild(path);
     btn.appendChild(svg);
 
-    // 버튼
-    var btn = document.createElement("div");
     applyStyles(btn, {
       position: "fixed",
       bottom: "20px",
