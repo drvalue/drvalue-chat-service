@@ -5,7 +5,7 @@
   var cfg = window.MyChatbotWidget || {};
   var botUrl = cfg.url || "http://115.68.223.14/user/home";
   var side = cfg.position === "left" ? "left" : "right";
-  var size = cfg.size || { width: 430, height: 720 };
+  var size = cfg.size || { width: 500, height: 720 };
 
   function applyStyles(el, styles) {
     for (var k in styles) {
@@ -27,15 +27,10 @@
         100% { transform: translateY(0) scale(1); opacity: 1; }
       }
       .mycbw-btn {
-        position: fixed;
-        bottom: 20px;
-        width: 60px; height: 60px;
-        border-radius: 50%;
+        position: fixed; bottom: 20px; width: 60px; height: 60px; border-radius: 50%;
         background: linear-gradient(116deg, #D5D9EB -10%, #717BBC 50%, #3E4784 90%);
-        color: #fff;
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer; z-index: 2147483647;
-        box-shadow: 0 4px 12px rgba(0,0,0,.2);
+        color: #fff; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; z-index: 2147483647; box-shadow: 0 4px 12px rgba(0,0,0,.2);
         font-size: 24px; font-family: Arial, sans-serif;
         animation: mycbw-pop 520ms cubic-bezier(.2,.75,.2,1);
         transition: transform 220ms ease, box-shadow 220ms ease;
@@ -43,32 +38,31 @@
       .mycbw-btn:hover { transform: translateY(-2px) scale(1.04); }
       .mycbw-btn:active { transform: translateY(0) scale(.98); }
 
+      /* 투명 오버레이(클릭 막지 않음) */
       .mycbw-overlay {
-        position: fixed; inset: 0;
-        background: transparent;
+        position: fixed; inset: 0; background: transparent;
         opacity: 0; visibility: hidden; pointer-events: none;
-        z-index: 2147483645;
+        z-index: 2147483645; transition: opacity 220ms ease;
       }
-      .mycbw-overlay.open {
-        opacity: 1; visibility: visible;
-      }
+      .mycbw-overlay.open { opacity: 1; visibility: visible; }
 
+      /* 패널: 기본은 숨김 상태 */
       .mycbw-frame {
         position: fixed; bottom: 90px;
         width: ${size.width}px; height: ${size.height}px;
-        border: 1px solid #ddd; border-radius: 16px;
-        z-index: 2147483646; background: #fff; overflow: hidden;
-        box-shadow: 0 14px 40px rgba(0,0,0,.28);
-        opacity: 0; visibility: hidden; pointer-events: none;
-        transform: translateY(12px) scale(.98);
-        transition:
-          opacity 260ms cubic-bezier(.2,.75,.2,1),
-          transform 260ms cubic-bezier(.2,.75,.2,1),
-          visibility 0s linear 260ms;
+        border: 1px solid #ddd; border-radius: 16px; background: #fff; overflow: hidden;
+        z-index: 2147483646; box-shadow: 0 14px 40px rgba(0,0,0,.28);
+        opacity: 0; transform: translateY(12px) scale(.98); visibility: hidden; pointer-events: none;
+        transition: opacity 260ms cubic-bezier(.2,.75,.2,1), transform 260ms cubic-bezier(.2,.75,.2,1);
+        will-change: opacity, transform;
       }
+      /* 열림 상태: 보이면서 제자리 */
       .mycbw-frame.open {
-        opacity: 1; visibility: visible; pointer-events: auto;
-        transform: translateY(0) scale(1);
+        opacity: 1; transform: translateY(0) scale(1); visibility: visible; pointer-events: auto;
+      }
+      /* 닫힘 애니 중: 눈에 보이게 두고(visibility:visible), opacity/transform만 원래 위치로 */
+      .mycbw-frame.closing {
+        opacity: 0; transform: translateY(12px) scale(.98); visibility: visible; pointer-events: none;
       }
     `;
     document.head.appendChild(style);
@@ -115,12 +109,12 @@
       </svg>`;
     document.body.appendChild(btn);
 
-    // 오버레이
+    // 오버레이(투명)
     var overlay = document.createElement("div");
     overlay.className = "mycbw-overlay";
     document.body.appendChild(overlay);
 
-    // iframe
+    // 패널(iframe)
     var iframe = document.createElement("iframe");
     iframe.className = "mycbw-frame";
     iframe.style[side] = "20px";
@@ -142,7 +136,6 @@
         targetOrigin
       );
     }
-
     iframe.addEventListener("load", sendSession);
     window.addEventListener("message", function (e) {
       if (targetOrigin !== "*" && e.origin !== targetOrigin) return;
@@ -158,23 +151,38 @@
 
     // 토글 상태
     var isOpen = false;
+
     function openPanel() {
       if (isOpen) return;
       isOpen = true;
       overlay.classList.add("open");
+      iframe.classList.remove("closing"); // 혹시 남아있을 수 있어 제거
       iframe.classList.add("open");
     }
+
     function closePanel() {
       if (!isOpen) return;
       isOpen = false;
-      overlay.classList.remove("open");
-      iframe.classList.remove("open");
+
+      // 닫힘 애니 진행: open은 유지한 채 closing만 추가하여 부드럽게 사라지게 함
+      iframe.classList.add("closing");
+
+      // 패널 애니 끝난 후에 open/closing 제거 + 오버레이 닫기
+      var onEnd = function (ev) {
+        if (ev && ev.target !== iframe) return; // 버블링 방지
+        iframe.classList.remove("open");
+        iframe.classList.remove("closing");
+        overlay.classList.remove("open");
+        iframe.removeEventListener("transitionend", onEnd);
+      };
+      iframe.addEventListener("transitionend", onEnd);
     }
 
     btn.addEventListener("click", function () {
       isOpen ? closePanel() : openPanel();
     });
 
+    // ESC로 닫기 (원치 않으면 이 블록 삭제)
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") closePanel();
     });
