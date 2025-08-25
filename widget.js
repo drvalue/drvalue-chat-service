@@ -5,7 +5,7 @@
   var cfg = window.MyChatbotWidget || {};
   var botUrl = cfg.url || "http://115.68.223.14/user/home";
   var side = cfg.position === "left" ? "left" : "right";
-  var size = cfg.size || { width: 430, height: 650 };
+  var size = cfg.size || { width: 430, height: 720 };
 
   function applyStyles(el, styles) {
     for (var k in styles) {
@@ -26,10 +26,6 @@
         60%  { transform: translateY(-4px) scale(1.03); opacity: 1; }
         100% { transform: translateY(0) scale(1); opacity: 1; }
       }
-      @keyframes mycbw-pulse {
-        0%,100% { box-shadow: 0 4px 12px rgba(0,0,0,.18); }
-        50%     { box-shadow: 0 10px 24px rgba(0,0,0,.24); }
-      }
       .mycbw-btn {
         position: fixed;
         bottom: 20px;
@@ -43,23 +39,18 @@
         font-size: 24px; font-family: Arial, sans-serif;
         animation: mycbw-pop 520ms cubic-bezier(.2,.75,.2,1);
         transition: transform 220ms ease, box-shadow 220ms ease;
-        will-change: transform, box-shadow;
       }
       .mycbw-btn:hover { transform: translateY(-2px) scale(1.04); }
       .mycbw-btn:active { transform: translateY(0) scale(.98); }
 
-      /* 오버레이: 블러/암전 제거 + 항상 비클릭 */
       .mycbw-overlay {
         position: fixed; inset: 0;
-        background: transparent; /* ← 투명 */
-        opacity: 0; visibility: hidden; pointer-events: none; /* ← 항상 클릭 불가 */
-        transition: opacity 220ms ease, visibility 0s linear 220ms;
+        background: transparent;
+        opacity: 0; visibility: hidden; pointer-events: none;
         z-index: 2147483645;
       }
       .mycbw-overlay.open {
-        opacity: 1; visibility: visible; /* 여전히 표시 상태만 전환(시각적 변화는 없음) */
-        /* pointer-events 그대로 none 유지 */
-        transition: opacity 220ms ease;
+        opacity: 1; visibility: visible;
       }
 
       .mycbw-frame {
@@ -74,21 +65,10 @@
           opacity 260ms cubic-bezier(.2,.75,.2,1),
           transform 260ms cubic-bezier(.2,.75,.2,1),
           visibility 0s linear 260ms;
-        will-change: opacity, transform;
       }
       .mycbw-frame.open {
         opacity: 1; visibility: visible; pointer-events: auto;
         transform: translateY(0) scale(1);
-        transition:
-          opacity 260ms cubic-bezier(.2,.75,.2,1),
-          transform 260ms cubic-bezier(.2,.75,.2,1);
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .mycbw-btn, .mycbw-frame, .mycbw-overlay {
-          animation: none !important;
-          transition: none !important;
-        }
       }
     `;
     document.head.appendChild(style);
@@ -135,7 +115,7 @@
       </svg>`;
     document.body.appendChild(btn);
 
-    // 오버레이 (투명 & 비클릭)
+    // 오버레이
     var overlay = document.createElement("div");
     overlay.className = "mycbw-overlay";
     document.body.appendChild(overlay);
@@ -146,9 +126,8 @@
     iframe.style[side] = "20px";
 
     // 세션 전달
-    var match = document.cookie.match(/(?:^|;\s*)PHPSESSID=([^;]+)/);
+    var match = document.cookie.match(/(?:^|;\\s*)PHPSESSID=([^;]+)/);
     var session = match ? match[1] : null;
-
     var targetOrigin;
     try {
       targetOrigin = new URL(botUrl).origin;
@@ -184,12 +163,6 @@
       isOpen = true;
       overlay.classList.add("open");
       iframe.classList.add("open");
-      // 버튼 가벼운 펄스
-      btn.style.animation = "mycbw-pulse 1200ms ease-in-out 1";
-      btn.addEventListener("animationend", function a() {
-        btn.style.animation = "";
-        btn.removeEventListener("animationend", a);
-      });
     }
     function closePanel() {
       if (!isOpen) return;
@@ -198,12 +171,10 @@
       iframe.classList.remove("open");
     }
 
-    // 클릭 토글 (버튼으로만 열고/닫기)
     btn.addEventListener("click", function () {
       isOpen ? closePanel() : openPanel();
     });
 
-    // ESC 닫기는 유지 (원하면 이것도 빼줄 수 있어)
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") closePanel();
     });
