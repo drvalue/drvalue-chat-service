@@ -90,7 +90,7 @@
     function sendSession() {
       if (!iframe.contentWindow) return;
       iframe.contentWindow.postMessage(
-        { type: "SET_SESSION", phpsessid: session },
+        { type: "SET_SESSION", phpsessid: session, mode: "chat-user-mode" },
         targetOrigin
       );
     }
