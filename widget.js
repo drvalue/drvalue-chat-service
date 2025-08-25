@@ -4,7 +4,7 @@
   window.__MY_CHATBOT_WIDGET__ = true;
 
   var cfg = window.MyChatbotWidget || {};
-  var botUrl = cfg.url || "http://115.68.178.142:90/user/home";
+  var botUrl = cfg.url || "http://115.68.223.14:90/user/home";
   var side = cfg.position === "left" ? "left" : "right";
   var size = cfg.size || { width: 430, height: 650 };
 
