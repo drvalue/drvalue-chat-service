@@ -4,7 +4,7 @@
   window.__MY_CHATBOT_WIDGET__ = true;
 
   var cfg = window.MyChatbotWidget || {};
-  var botUrl = cfg.url || "chat.growxd.co.kr";
+  var botUrl = cfg.url || "https://chat.growxd.co.kr";
   var side = cfg.position === "left" ? "left" : "right";
   var size = cfg.size || { width: 430, height: 650 };
 
