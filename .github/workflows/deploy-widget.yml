@@ -4,6 +4,9 @@ on:
   push:
     branches: [ "main" ]
 
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -35,7 +38,6 @@ EOF
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add version.js
-          # 변경이 있어야만 커밋
           if ! git diff --cached --quiet; then
             git commit -m "chore: update version.js to ${{ steps.meta.outputs.version }} [skip ci]"
             git push origin main
@@ -50,6 +52,5 @@ EOF
           curl -sS "${BASE}/loader.js" || true
           curl -sS "${BASE}/version.js" || true
           curl -sS "${BASE}/widget.js" || true
-          # SHA 고정 URL도 미리 퍼지(보수적)
           SHA="${{ steps.meta.outputs.sha }}"
           curl -sS "https://purge.jsdelivr.net/gh/drvalue/drvalue-chat-service@${SHA}/widget.js" || true
