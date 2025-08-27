@@ -1,24 +1,11 @@
-// loader.js (fetch 없는 버전)
+// loader.js — minimal, CSP-safe, @main only
 (function () {
   const FLAG = "__MY_CHATBOT_WIDGET__";
   const REPO = "drvalue/drvalue-chat-service";
 
-  const VERSION_SCRIPT_CANDIDATES = [
-    `https://cdn.jsdelivr.net/gh/${REPO}@main/version.js`,
-    `https://cdn.jsdelivr.net/gh/${REPO}/version.js`,
-    `https://fastly.jsdelivr.net/gh/${REPO}@main/version.js`,
-    `https://raw.githubusercontent.com/${REPO}/main/version.js`,
-  ];
-
-  const WIDGET_BASE_URLS = [
-    `https://cdn.jsdelivr.net/gh/${REPO}@main/widget.js`,
-    `https://cdn.jsdelivr.net/gh/${REPO}/widget.js`,
-    `https://fastly.jsdelivr.net/gh/${REPO}@main/widget.js`,
-    `https://raw.githubusercontent.com/${REPO}/main/widget.js`,
-  ];
-
-  const POLL_INTERVAL_MS =
-    (window.MyChatbotWidget && window.MyChatbotWidget.poll) || 0;
+  // 반드시 @main 기준으로만 시도 (경로 혼란 제거)
+  const VERSION_JS = `https://cdn.jsdelivr.net/gh/${REPO}@main/version.js`;
+  const WIDGET_JS = `https://cdn.jsdelivr.net/gh/${REPO}@main/widget.js`;
 
   if (window[FLAG]?.__loaderInitialized) return;
   window[FLAG] = window[FLAG] || {};
@@ -33,9 +20,13 @@
       s.async = true;
       s.onload = () => {
         loaded.add(src);
+        console.debug("[widget] loaded:", src);
         resolve();
       };
-      s.onerror = (e) => reject(e);
+      s.onerror = (e) => {
+        console.error("[widget] load error:", src, e);
+        reject(e);
+      };
       document.head.appendChild(s);
     });
   }
@@ -43,50 +34,31 @@
   function teardownOld() {
     try {
       if (window[FLAG]?.teardown) window[FLAG].teardown();
-    } catch {}
-  }
-
-  async function loadVersionScript() {
-    for (const u of VERSION_SCRIPT_CANDIDATES) {
-      try {
-        await loadScript(u);
-        return true;
-      } catch {}
-    }
-    return false;
-  }
-
-  async function loadWidget(baseUrl, ver) {
-    await loadScript(`${baseUrl}?v=${encodeURIComponent(ver || Date.now())}`);
-    window[FLAG] = {
-      ...(window[FLAG] || {}),
-      __widgetLoaded: true,
-      version: ver || "",
-    };
-    if (baseUrl) localStorage.setItem("WIDGET_URL", baseUrl);
-    if (ver) localStorage.setItem("WIDGET_VERSION", ver);
-  }
-
-  async function loadWidgetFallback() {
-    for (const base of WIDGET_BASE_URLS) {
-      try {
-        await loadWidget(base, String(Date.now()));
-        return true;
-      } catch {}
-    }
-    return false;
+    } catch (e) {}
   }
 
   async function ensureLatestOnce() {
-    const ok = await loadVersionScript();
-
-    let latestVer = "";
-    let baseUrl = "";
-    if (ok && window.__WIDGET_MANIFEST__) {
-      latestVer = String(window.__WIDGET_MANIFEST__.version || "").trim();
-      baseUrl = String(window.__WIDGET_MANIFEST__.url || "").trim();
+    // 1) version.js 먼저 시도
+    let latestVer = "",
+      baseUrl = "";
+    try {
+      await loadScript(VERSION_JS);
+      if (window.__WIDGET_MANIFEST__) {
+        latestVer = String(window.__WIDGET_MANIFEST__.version || "").trim();
+        baseUrl = String(window.__WIDGET_MANIFEST__.url || "").trim();
+        console.debug("[widget] manifest:", { latestVer, baseUrl });
+      } else {
+        console.warn(
+          "[widget] version.js loaded but __WIDGET_MANIFEST__ missing"
+        );
+      }
+    } catch (e) {
+      console.warn(
+        "[widget] version.js failed, will fallback to widget.js directly"
+      );
     }
 
+    // 2) 최신 판단 후 로드
     const currentVer =
       window[FLAG]?.version || localStorage.getItem("WIDGET_VERSION") || "";
 
@@ -96,19 +68,30 @@
       currentVer === latestVer &&
       window[FLAG]?.__widgetLoaded
     ) {
+      console.debug("[widget] already latest, skip");
       return;
     }
 
     try {
+      teardownOld();
+
       if (latestVer && baseUrl) {
-        teardownOld();
-        await loadWidget(baseUrl, latestVer);
+        await loadScript(`${baseUrl}?v=${encodeURIComponent(latestVer)}`);
+        window[FLAG] = {
+          ...(window[FLAG] || {}),
+          __widgetLoaded: true,
+          version: latestVer,
+        };
+        localStorage.setItem("WIDGET_VERSION", latestVer);
+        localStorage.setItem("WIDGET_URL", baseUrl);
       } else {
-        const ok2 = await loadWidgetFallback();
-        if (!ok2)
-          console.error(
-            "[widget] widget fallback failed - check CSP(script-src) and paths"
-          );
+        // 3) 폴백: 버전 없이 @main/widget.js 강제 로드
+        await loadScript(`${WIDGET_JS}?v=${Date.now()}`);
+        window[FLAG] = {
+          ...(window[FLAG] || {}),
+          __widgetLoaded: true,
+          version: "",
+        };
       }
     } finally {
       try {
@@ -118,5 +101,8 @@
   }
 
   ensureLatestOnce();
-  if (POLL_INTERVAL_MS > 0) setInterval(ensureLatestOnce, POLL_INTERVAL_MS);
+
+  // 필요하면 폴링
+  const POLL = (window.MyChatbotWidget && window.MyChatbotWidget.poll) || 0;
+  if (POLL > 0) setInterval(ensureLatestOnce, POLL);
 })();
