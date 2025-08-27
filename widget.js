@@ -1,12 +1,25 @@
 (function () {
-  if (window.__MY_CHATBOT_WIDGET__) return;
-  window.__MY_CHATBOT_WIDGET__ = true;
+  const FLAG = "__MY_CHATBOT_WIDGET__";
+  const VERSION = "2025-08-27-01";
+
+  console.log("CHAT VERSION :: ", VERSION);
+
+  if (window[FLAG]?.teardown) {
+    try {
+      window[FLAG].teardown();
+    } catch (e) {
+      console.warn("[widget] old teardown error:", e);
+    }
+  }
+  window[FLAG] = { version: VERSION };
 
   var cfg = window.MyChatbotWidget || {};
   // var botUrl = cfg.url || "http://115.68.223.14/user/home";
   var botUrl = cfg.url || "https://chat.growxd.co.kr/user/home";
   var side = cfg.position === "left" ? "left" : "right";
   var size = cfg.size || { width: 500, height: 720 };
+
+  var btn, overlay, iframe;
 
   function injectStyles() {
     if (document.getElementById("mycbw-style")) return;
@@ -64,7 +77,7 @@
     injectStyles();
 
     // 버튼
-    var btn = document.createElement("div");
+    btn = document.createElement("div");
     btn.className = "mycbw-btn";
     btn.style[side] = "20px";
     btn.innerHTML = `
@@ -102,12 +115,12 @@
     document.body.appendChild(btn);
 
     // 오버레이
-    var overlay = document.createElement("div");
+    overlay = document.createElement("div");
     overlay.className = "mycbw-overlay";
     document.body.appendChild(overlay);
 
     // 패널(iframe)
-    var iframe = document.createElement("iframe");
+    iframe = document.createElement("iframe");
     iframe.className = "mycbw-frame";
     iframe.style[side] = "20px";
 
@@ -214,7 +227,24 @@
       stopHeartbeat();
     });
   }
-  console.log("test test");
+
+  window[FLAG].teardown = function () {
+    try {
+      clearInterval(heartbeatId);
+    } catch {}
+    try {
+      btn && btn.remove();
+    } catch {}
+    try {
+      overlay && overlay.remove();
+    } catch {}
+    try {
+      iframe && iframe.remove();
+    } catch {}
+    try {
+      document.getElementById("mycbw-style")?.remove();
+    } catch {}
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", run, { once: true });
