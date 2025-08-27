@@ -1,5 +1,4 @@
 (function () {
-  console.log("ㅋㅋㅋㅋㅋㅋㅋㅎㅎ");
   const FLAG = "__MY_CHATBOT_WIDGET__";
   const VERSION = "2025-08-27-01";
 
@@ -134,11 +133,16 @@
       targetOrigin = "*";
     }
 
-    function sendSession() {
+    function sendSession(extra = {}) {
       if (!iframe.contentWindow) return;
       var session = getSession();
       iframe.contentWindow.postMessage(
-        { type: "SET_SESSION", phpsessid: session, mode: "chat-user-mode" },
+        {
+          type: "SET_SESSION",
+          phpsessid: session,
+          mode: "chat-user-mode",
+          ...extra,
+        },
         targetOrigin
       );
     }
@@ -191,14 +195,17 @@
       iframe.classList.remove("closing");
       iframe.classList.add("open");
 
-      // 처음 열었을 때부터 전송 & 하트비트 시작
-      sendSession();
+      // 열 때: modal:true
+      sendSession({ modal: true });
       startHeartbeat();
     }
 
     function closePanel() {
       if (!isOpen) return;
       isOpen = false;
+
+      // 닫을 때: modal:false
+      sendSession({ modal: false });
 
       iframe.classList.add("closing");
       var onEnd = function (ev) {
