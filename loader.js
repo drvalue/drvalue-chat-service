@@ -1,5 +1,5 @@
-// loader.js — minimal, CSP-safe, @main only
 (function () {
+  console.log("hi");
   const FLAG = "__MY_CHATBOT_WIDGET__";
   const REPO = "drvalue/drvalue-chat-service";
 
