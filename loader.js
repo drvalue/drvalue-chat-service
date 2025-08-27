@@ -32,23 +32,16 @@
       document.head.appendChild(s);
     });
   }
-
   async function tryAddAny(urls) {
-    let lastErr;
     for (const u of urls) {
       try {
         await add(u);
         return true;
-      } catch (e) {
-        lastErr = e;
-      }
+      } catch {}
     }
-    if (lastErr) console.warn("[widget] all candidates failed:", urls, lastErr);
     return false;
   }
-
   async function loadWidgetWithVersion(urls, ver) {
-    // ver 있으면 첫 성공 URL에 v= 붙여 로드
     for (const base of urls) {
       try {
         const u = ver ? withParam(base, "v=" + encodeURIComponent(ver)) : base;
@@ -61,7 +54,6 @@
 
   (async function run() {
     try {
-      // 1) version.js (jsDelivr → fastly) 순으로 시도
       const ok = await tryAddAny(VERSION_JS_CANDIDATES);
       let ver = "",
         url = "";
@@ -69,11 +61,8 @@
         ver = String(window.__WIDGET_MANIFEST__.version || "").trim();
         url = String(window.__WIDGET_MANIFEST__.url || "").trim();
       }
-
-      // 2) 매니페스트 있으면 그 url 사용, 없으면 후보 세트로 폴백
       if (url) {
-        const u = ver ? withParam(url, "v=" + encodeURIComponent(ver)) : url;
-        await add(u);
+        await add(ver ? withParam(url, "v=" + encodeURIComponent(ver)) : url);
       } else {
         const ok2 = await loadWidgetWithVersion(
           WIDGET_JS_CANDIDATES,
@@ -81,8 +70,7 @@
         );
         if (!ok2) console.error("[widget] widget load fallback failed");
       }
-    } catch (e) {
-      // 3) 완전 폴백 (버전 없이라도 띄우기)
+    } catch {
       try {
         await tryAddAny(WIDGET_JS_CANDIDATES);
       } catch {}
