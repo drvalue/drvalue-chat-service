@@ -1,5 +1,19 @@
 (function () {
-  console.log("hi");
+  try {
+    const dot = document.createElement("div");
+    Object.assign(dot.style, {
+      position: "fixed",
+      top: "10px",
+      right: "10px",
+      width: "10px",
+      height: "10px",
+      background: "#10b981",
+      borderRadius: "50%",
+      zIndex: 2147483647,
+    });
+    document.documentElement.appendChild(dot);
+  } catch {}
+
   const FLAG = "__MY_CHATBOT_WIDGET__";
   const REPO = "drvalue/drvalue-chat-service";
 
