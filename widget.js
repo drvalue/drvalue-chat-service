@@ -2,8 +2,6 @@
   const FLAG = "__MY_CHATBOT_WIDGET__";
   const VERSION = "2025-08-27-01";
 
-  console.log("CHAT VERSION :: ", VERSION);
-
   if (window[FLAG]?.teardown) {
     try {
       window[FLAG].teardown();
