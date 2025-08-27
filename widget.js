@@ -178,7 +178,7 @@
       "allow",
       "clipboard-read; clipboard-write; microphone; camera"
     );
-    iframe.src = botUrl;
+    iframe.src = botUrl + "?v=" + VERSION;
     document.body.appendChild(iframe);
 
     // 열림/닫힘 토글
