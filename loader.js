@@ -1,4 +1,5 @@
 (function () {
+  console.log("hihi");
   const FLAG = "__MY_CHATBOT_WIDGET__";
   const REPO = "drvalue/drvalue-chat-service";
 
