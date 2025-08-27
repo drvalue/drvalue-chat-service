@@ -2,8 +2,6 @@
   const FLAG = "__MY_CHATBOT_WIDGET__";
   const VERSION = "2025-08-27-01";
 
-  console.log("CHAT VERSION :: ", VERSION);
-
   if (window[FLAG]?.teardown) {
     try {
       window[FLAG].teardown();
@@ -14,7 +12,6 @@
   window[FLAG] = { version: VERSION };
 
   var cfg = window.MyChatbotWidget || {};
-  // var botUrl = cfg.url || "http://115.68.223.14/user/home";
   var botUrl = cfg.url || "https://chat.growxd.co.kr/user/home";
   var side = cfg.position === "left" ? "left" : "right";
   var size = cfg.size || { width: 500, height: 720 };
