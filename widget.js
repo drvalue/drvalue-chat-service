@@ -3,19 +3,10 @@
   window.__MY_CHATBOT_WIDGET__ = true;
 
   var cfg = window.MyChatbotWidget || {};
-  // var botUrl = cfg.url || "http://115.68.223.14/user/home";
-  var botUrl = cfg.url || "https://chat.growxd.co.kr/user/home";
+  var botUrl = cfg.url || "http://115.68.223.14/user/home";
+  // var botUrl = cfg.url || "https://chat.growxd.co.kr/user/home";
   var side = cfg.position === "left" ? "left" : "right";
   var size = cfg.size || { width: 500, height: 720 };
-
-  function applyStyles(el, styles) {
-    for (var k in styles) {
-      if (!Object.prototype.hasOwnProperty.call(styles, k)) continue;
-      var v = styles[k];
-      if (v == null) continue;
-      el.style[k] = v;
-    }
-  }
 
   function injectStyles() {
     if (document.getElementById("mycbw-style")) return;
@@ -110,7 +101,7 @@
       </svg>`;
     document.body.appendChild(btn);
 
-    // 오버레이(투명)
+    // 오버레이
     var overlay = document.createElement("div");
     overlay.className = "mycbw-overlay";
     document.body.appendChild(overlay);
@@ -120,9 +111,7 @@
     iframe.className = "mycbw-frame";
     iframe.style[side] = "20px";
 
-    // 세션 전달
     function getSession() {
-      // \s 한 개만 사용 (\\s 아님)
       var m = document.cookie.match(/(?:^|;\s*)PHPSESSID=([^;]+)/);
       return m ? m[1] : null;
     }
@@ -136,38 +125,44 @@
 
     function sendSession() {
       if (!iframe.contentWindow) return;
-      var session = getSession(); // 항상 최신 세션
+      var session = getSession();
       iframe.contentWindow.postMessage(
         { type: "SET_SESSION", phpsessid: session, mode: "chat-user-mode" },
         targetOrigin
       );
     }
 
-    // 하트비트(10초) — 탭이 보일 때만 동작
+    // 하트비트: 처음 열렸을 때부터 시작, 이후엔 계속 유지
     var heartbeatId = null;
+    var heartbeatStarted = false;
     function startHeartbeat() {
-      if (heartbeatId) return;
-      heartbeatId = setInterval(sendSession, 10_000);
+      if (heartbeatStarted) return;
+      heartbeatStarted = true;
+      if (!heartbeatId) {
+        heartbeatId = setInterval(sendSession, 10_000);
+      }
     }
     function stopHeartbeat() {
-      if (!heartbeatId) return;
-      clearInterval(heartbeatId);
-      heartbeatId = null;
+      if (heartbeatId) {
+        clearInterval(heartbeatId);
+        heartbeatId = null;
+      }
+      heartbeatStarted = false;
     }
 
+    // iframe 로드 시에는 전송/하트비트 시작하지 않음 (요구사항)
     iframe.addEventListener("load", function () {
-      sendSession(); // 즉시 1회
-      startHeartbeat(); // 하트비트 시작
+      // no-op
     });
 
+    // 위젯 준비 신호: 하트비트가 시작된 이후라면 1회 더 전송(안전)
     window.addEventListener("message", function (e) {
       if (targetOrigin !== "*" && e.origin !== targetOrigin) return;
       if (e.data && e.data.type === "WIDGET_READY") {
-        sendSession(); // 위젯 준비 신호 시 1회 더 (안전장치)
+        if (heartbeatStarted) sendSession();
       }
     });
 
-    // 필요 권한
     iframe.setAttribute(
       "allow",
       "clipboard-read; clipboard-write; microphone; camera"
@@ -175,15 +170,7 @@
     iframe.src = botUrl;
     document.body.appendChild(iframe);
 
-    // 탭 가시성에 따라 하트비트 일시중지/재개
-    document.addEventListener("visibilitychange", function () {
-      if (document.hidden) stopHeartbeat();
-      else startHeartbeat();
-    });
-    // 페이지 이탈 시 정리
-    window.addEventListener("beforeunload", stopHeartbeat);
-
-    // ===== 패널 토글 =====
+    // 열림/닫힘 토글
     var isOpen = false;
 
     function openPanel() {
@@ -192,9 +179,10 @@
       overlay.classList.add("open");
       iframe.classList.remove("closing");
       iframe.classList.add("open");
-      // 열려 있을 때만 전송하고 싶다면 아래 두 줄을 주석 해제
-      // sendSession();
-      // startHeartbeat();
+
+      // 처음 열었을 때부터 전송 & 하트비트 시작
+      sendSession();
+      startHeartbeat();
     }
 
     function closePanel() {
@@ -202,27 +190,28 @@
       isOpen = false;
 
       iframe.classList.add("closing");
-
       var onEnd = function (ev) {
-        if (ev && ev.target !== iframe) return; // 버블링 방지
+        if (ev && ev.target !== iframe) return;
         iframe.classList.remove("open");
         iframe.classList.remove("closing");
         overlay.classList.remove("open");
         iframe.removeEventListener("transitionend", onEnd);
       };
       iframe.addEventListener("transitionend", onEnd);
-
-      // 열려 있을 때만 하트비트
-      // stopHeartbeat();
     }
 
     btn.addEventListener("click", function () {
       isOpen ? closePanel() : openPanel();
     });
 
-    // ESC로 닫기
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") closePanel();
+    });
+
+    // 페이지 이탈 시 정리
+    window.addEventListener("beforeunload", function () {
+      // 페이지 떠날 때만 정리
+      stopHeartbeat();
     });
   }
 
