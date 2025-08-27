@@ -1,21 +1,19 @@
+// loader.js (fetch 없는 버전)
 (function () {
-  console.log("hihi");
   const FLAG = "__MY_CHATBOT_WIDGET__";
   const REPO = "drvalue/drvalue-chat-service";
 
-  // version.js 후보들 (브랜치/미러 포함)
   const VERSION_SCRIPT_CANDIDATES = [
-    `https://cdn.jsdelivr.net/gh/${REPO}/version.js`,
     `https://cdn.jsdelivr.net/gh/${REPO}@main/version.js`,
-    `https://fastly.jsdelivr.net/gh/${REPO}/version.js`,
+    `https://cdn.jsdelivr.net/gh/${REPO}/version.js`,
+    `https://fastly.jsdelivr.net/gh/${REPO}@main/version.js`,
     `https://raw.githubusercontent.com/${REPO}/main/version.js`,
   ];
 
-  // 위젯 기본 URL(매니페스트 실패 시 폴백)
   const WIDGET_BASE_URLS = [
-    `https://cdn.jsdelivr.net/gh/${REPO}/widget.js`,
     `https://cdn.jsdelivr.net/gh/${REPO}@main/widget.js`,
-    `https://fastly.jsdelivr.net/gh/${REPO}/widget.js`,
+    `https://cdn.jsdelivr.net/gh/${REPO}/widget.js`,
+    `https://fastly.jsdelivr.net/gh/${REPO}@main/widget.js`,
     `https://raw.githubusercontent.com/${REPO}/main/widget.js`,
   ];
 
@@ -45,20 +43,16 @@
   function teardownOld() {
     try {
       if (window[FLAG]?.teardown) window[FLAG].teardown();
-    } catch (e) {}
+    } catch {}
   }
 
   async function loadVersionScript() {
-    let lastErr;
     for (const u of VERSION_SCRIPT_CANDIDATES) {
       try {
         await loadScript(u);
         return true;
-      } catch (e) {
-        lastErr = e;
-      }
+      } catch {}
     }
-    console.warn("[widget] all version.js candidates failed", lastErr);
     return false;
   }
 
@@ -78,13 +72,12 @@
       try {
         await loadWidget(base, String(Date.now()));
         return true;
-      } catch (_) {}
+      } catch {}
     }
     return false;
   }
 
   async function ensureLatestOnce() {
-    // 1) version.js 로드 시도
     const ok = await loadVersionScript();
 
     let latestVer = "";
@@ -94,9 +87,9 @@
       baseUrl = String(window.__WIDGET_MANIFEST__.url || "").trim();
     }
 
-    // 2) 이미 최신이면 스킵
     const currentVer =
       window[FLAG]?.version || localStorage.getItem("WIDGET_VERSION") || "";
+
     if (
       latestVer &&
       baseUrl &&
@@ -106,13 +99,11 @@
       return;
     }
 
-    // 3) 교체 로드
     try {
       if (latestVer && baseUrl) {
         teardownOld();
         await loadWidget(baseUrl, latestVer);
       } else {
-        // version.js 자체가 막히거나 비어있을 때 폴백
         const ok2 = await loadWidgetFallback();
         if (!ok2)
           console.error(
@@ -120,7 +111,6 @@
           );
       }
     } finally {
-      // 다음 주기를 위해 전역 매니페스트 정리(선택)
       try {
         delete window.__WIDGET_MANIFEST__;
       } catch {}
@@ -128,7 +118,5 @@
   }
 
   ensureLatestOnce();
-  if (POLL_INTERVAL_MS > 0) {
-    setInterval(ensureLatestOnce, POLL_INTERVAL_MS);
-  }
+  if (POLL_INTERVAL_MS > 0) setInterval(ensureLatestOnce, POLL_INTERVAL_MS);
 })();
