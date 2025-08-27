@@ -214,6 +214,7 @@
       stopHeartbeat();
     });
   }
+  console.log("test test");
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", run, { once: true });
