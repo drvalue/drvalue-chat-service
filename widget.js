@@ -111,6 +111,32 @@
       </svg>`;
     document.body.appendChild(btn);
 
+    var closeBtn = document.createElement("div");
+    closeBtn.className = "mycbw-close";
+    closeBtn.innerHTML = "&times;";
+    closeBtn.style.position = "fixed";
+    closeBtn.style[side] = 20 + size.width - 16 + "px";
+    closeBtn.style.bottom = 90 + size.height - 16 + "px";
+    closeBtn.style.width = "20px";
+    closeBtn.style.height = "20px";
+    closeBtn.style.borderRadius = "6px";
+    closeBtn.style.background = "#237804";
+    closeBtn.style.color = "white";
+    closeBtn.style.fontSize = "22px";
+    closeBtn.style.display = "flex";
+    closeBtn.style.alignItems = "center";
+    closeBtn.style.justifyContent = "center";
+    closeBtn.style.boxShadow = "0 2px 6px rgba(0,0,0,.2)";
+    closeBtn.style.cursor = "pointer";
+    closeBtn.style.zIndex = "2147483647";
+    closeBtn.style.opacity = "0";
+    closeBtn.style.visibility = "hidden";
+    closeBtn.style.transition = "opacity 220ms ease";
+
+    document.body.appendChild(closeBtn);
+
+    closeBtn.addEventListener("click", closePanel);
+
     // 오버레이
     overlay = document.createElement("div");
     overlay.className = "mycbw-overlay";
@@ -195,6 +221,10 @@
       iframe.classList.remove("closing");
       iframe.classList.add("open");
 
+      // X 버튼 표시
+      closeBtn.style.opacity = "1";
+      closeBtn.style.visibility = "visible";
+
       // 열 때: modal:true
       sendSession({ modal: true });
       startHeartbeat();
@@ -206,8 +236,12 @@
 
       // 닫을 때: modal:false
       sendSession({ modal: false });
-
       iframe.classList.add("closing");
+
+      // X 버튼 숨김
+      closeBtn.style.opacity = "0";
+      closeBtn.style.visibility = "hidden";
+
       var onEnd = function (ev) {
         if (ev && ev.target !== iframe) return;
         iframe.classList.remove("open");
