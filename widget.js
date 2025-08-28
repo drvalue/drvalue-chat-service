@@ -12,7 +12,7 @@
   window[FLAG] = { version: VERSION };
 
   var cfg = window.MyChatbotWidget || {};
-  var botUrl = cfg.url || "https://chat.growxd.co.kr";
+  var botUrl = cfg.url || "https://chat.growxd.co.kr/user/home";
   var side = cfg.position === "left" ? "left" : "right";
   var size = cfg.size || { width: 500, height: 720 };
 
