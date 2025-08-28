@@ -115,14 +115,15 @@
     btnClose.className = "mycbw-btn-close";
     btnClose.innerHTML = "&times;";
     btnClose.style.position = "absolute";
-    btnClose.style.top = "-6px";
-    btnClose.style.right = "-6px";
+    btnClose.style.top = "0";
+    btnClose.style.right = "0";
     btnClose.style.width = "20px";
     btnClose.style.height = "20px";
     btnClose.style.borderRadius = "6px";
-    btnClose.style.background = "#237804";
+    btnClose.style.background =
+      "linear-gradient(116deg, #717BBC 50%, #3E4784 90%)";
     btnClose.style.color = "white";
-    btnClose.style.fontSize = "16px";
+    btnClose.style.fontSize = "20px";
     btnClose.style.display = "none";
     btnClose.style.alignItems = "center";
     btnClose.style.justifyContent = "center";
