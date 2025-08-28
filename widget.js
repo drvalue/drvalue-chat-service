@@ -111,31 +111,27 @@
       </svg>`;
     document.body.appendChild(btn);
 
-    var closeBtn = document.createElement("div");
-    closeBtn.className = "mycbw-close";
-    closeBtn.innerHTML = "&times;";
-    closeBtn.style.position = "fixed";
-    closeBtn.style[side] = 20 + size.width - 16 + "px";
-    closeBtn.style.bottom = 90 + size.height - 16 + "px";
-    closeBtn.style.width = "20px";
-    closeBtn.style.height = "20px";
-    closeBtn.style.borderRadius = "6px";
-    closeBtn.style.background = "#237804";
-    closeBtn.style.color = "white";
-    closeBtn.style.fontSize = "22px";
-    closeBtn.style.display = "flex";
-    closeBtn.style.alignItems = "center";
-    closeBtn.style.justifyContent = "center";
-    closeBtn.style.boxShadow = "0 2px 6px rgba(0,0,0,.2)";
-    closeBtn.style.cursor = "pointer";
-    closeBtn.style.zIndex = "2147483647";
-    closeBtn.style.opacity = "0";
-    closeBtn.style.visibility = "hidden";
-    closeBtn.style.transition = "opacity 220ms ease";
+    var btnClose = document.createElement("div");
+    btnClose.className = "mycbw-btn-close";
+    btnClose.innerHTML = "&times;";
+    btnClose.style.position = "absolute";
+    btnClose.style.top = "-6px";
+    btnClose.style.right = "-6px";
+    btnClose.style.width = "20px";
+    btnClose.style.height = "20px";
+    btnClose.style.borderRadius = "6px";
+    btnClose.style.background = "#237804";
+    btnClose.style.color = "white";
+    btnClose.style.fontSize = "16px";
+    btnClose.style.display = "none";
+    btnClose.style.alignItems = "center";
+    btnClose.style.justifyContent = "center";
+    btnClose.style.boxShadow = "0 2px 6px rgba(0,0,0,.2)";
+    btnClose.style.cursor = "pointer";
 
-    document.body.appendChild(closeBtn);
+    btn.appendChild(btnClose);
 
-    closeBtn.addEventListener("click", closePanel);
+    btnClose.addEventListener("click", closePanel);
 
     // 오버레이
     overlay = document.createElement("div");
