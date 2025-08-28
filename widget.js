@@ -221,9 +221,8 @@
       iframe.classList.remove("closing");
       iframe.classList.add("open");
 
-      // X 버튼 표시
-      closeBtn.style.opacity = "1";
-      closeBtn.style.visibility = "visible";
+      // 플로팅 버튼 위 X 버튼 표시
+      btnClose.style.display = "flex";
 
       // 열 때: modal:true
       sendSession({ modal: true });
@@ -238,9 +237,8 @@
       sendSession({ modal: false });
       iframe.classList.add("closing");
 
-      // X 버튼 숨김
-      closeBtn.style.opacity = "0";
-      closeBtn.style.visibility = "hidden";
+      // X 버튼 숨기기
+      btnClose.style.display = "none";
 
       var onEnd = function (ev) {
         if (ev && ev.target !== iframe) return;
