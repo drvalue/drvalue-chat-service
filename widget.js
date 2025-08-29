@@ -66,6 +66,9 @@
       .mycbw-frame.closing {
         opacity: 0; transform: translateY(12px) scale(.98); visibility: visible; pointer-events: none;
       }
+
+      .mycbw-btn .mycbw-btn-close { display: none; }
+      .mycbw-btn.open .mycbw-btn-close { display: flex; }
     `;
     document.head.appendChild(style);
   }
@@ -124,36 +127,26 @@
       "linear-gradient(116deg, #717BBC 50%, #3E4784 90%)";
     btnClose.style.color = "white";
     btnClose.style.fontSize = "20px";
-    btnClose.style.display = "none";
     btnClose.style.alignItems = "center";
     btnClose.style.justifyContent = "center";
     btnClose.style.boxShadow = "0 2px 6px rgba(0,0,0,.2)";
     btnClose.style.cursor = "pointer";
 
-    btn.appendChild(btnClose);
-
-    // 닫기 버튼 클릭 시: 버블링 막고 닫기
-    btnClose.setAttribute("role", "button");
-    btnClose.setAttribute("aria-label", "채팅 패널 닫기");
-    btnClose.tabIndex = 0;
-
-    function onCloseClick(e) {
+    // 이벤트
+    btnClose.addEventListener("pointerdown", function (e) {
       e.preventDefault();
-      e.stopPropagation(); // 부모(btn)의 토글 클릭 막기
+      e.stopPropagation();
       closePanel();
-    }
+    });
 
-    function onCloseKey(e) {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        e.stopPropagation();
-        closePanel();
-      }
-    }
+    // 일부 환경에서 click이 추가로 발생할 수 있어 부모 토글까지 차단만 함
+    btnClose.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      // closePanel() 호출 안 함 (중복 방지)
+    });
 
-    btnClose.addEventListener("pointerdown", onCloseClick);
-    btnClose.addEventListener("click", onCloseClick);
-    btnClose.addEventListener("keydown", onCloseKey);
+    btn.appendChild(btnClose);
 
     // 오버레이
     overlay = document.createElement("div");
@@ -199,6 +192,7 @@
       heartbeatStarted = true;
       if (!heartbeatId) {
         heartbeatId = setInterval(sendSession, 10_000);
+        window[FLAG]._hb = heartbeatId; // ← 전역 플래그에 보관
       }
     }
     function stopHeartbeat() {
@@ -239,8 +233,9 @@
       iframe.classList.remove("closing");
       iframe.classList.add("open");
 
-      // 플로팅 버튼 위 X 버튼 표시
-      btnClose.style.display = "flex";
+      // 플로팅 버튼: 열림 상태 클래스 + 접근성 상태
+      btn.classList.add("open");
+      btn.setAttribute("aria-expanded", "true");
 
       // 열 때: modal:true
       sendSession({ modal: true });
@@ -255,8 +250,9 @@
       sendSession({ modal: false });
       iframe.classList.add("closing");
 
-      // X 버튼 숨기기
-      btnClose.style.display = "none";
+      // 플로팅 버튼: 닫힘 상태 클래스 + 접근성 상태
+      btn.classList.remove("open");
+      btn.setAttribute("aria-expanded", "false");
 
       var onEnd = function (ev) {
         if (ev && ev.target !== iframe) return;
@@ -285,7 +281,7 @@
 
   window[FLAG].teardown = function () {
     try {
-      clearInterval(heartbeatId);
+      clearInterval(window[FLAG]._hb);
     } catch {}
     try {
       btn && btn.remove();
