@@ -1,6 +1,6 @@
 (function () {
   const FLAG = "__MY_CHATBOT_WIDGET__";
-  const VERSION = "2025-08-29:01";
+  const VERSION = "2025-08-29:02";
 
   if (window[FLAG]?.teardown) {
     try {
