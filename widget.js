@@ -17,6 +17,7 @@
   var size = cfg.size || { width: 500, height: 720 };
 
   var btn, overlay, iframe;
+  var swallowNextBtnClick = false;
 
   function injectStyles() {
     if (document.getElementById("mycbw-style")) return;
@@ -136,6 +137,7 @@
     btnClose.addEventListener("pointerdown", function (e) {
       e.preventDefault();
       e.stopPropagation();
+      swallowNextBtnClick = true;
       closePanel();
     });
 
@@ -268,6 +270,13 @@
     }
 
     btn.addEventListener("click", function () {
+      if (swallowNextBtnClick) {
+        // X 버튼에서 올라온 합성 클릭 한 번만 먹어치움
+        swallowNextBtnClick = false;
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       isOpen ? closePanel() : openPanel();
     });
 
