@@ -134,6 +134,7 @@
 
     // 이벤트
     btnClose.addEventListener("pointerdown", function (e) {
+      console.log(e);
       e.preventDefault();
       closePanel();
     });
@@ -227,13 +228,15 @@
     function openPanel() {
       if (isOpen) return;
       isOpen = true;
-      overlay.classList.add("open");
-      iframe.classList.remove("closing");
-      iframe.classList.add("open");
+      console.log("open!!");
 
       // 플로팅 버튼: 열림 상태 클래스 + 접근성 상태
       btn.classList.add("open");
       btn.setAttribute("aria-expanded", "true");
+
+      overlay.classList.add("open");
+      iframe.classList.remove("closing");
+      iframe.classList.add("open");
 
       // 열 때: modal:true
       sendSession({ modal: true });
@@ -243,14 +246,15 @@
     function closePanel() {
       if (!isOpen) return;
       isOpen = false;
-
-      // 닫을 때: modal:false
-      sendSession({ modal: false });
-      iframe.classList.add("closing");
+      console.log("close!!");
 
       // 플로팅 버튼: 닫힘 상태 클래스 + 접근성 상태
       btn.classList.remove("open");
       btn.setAttribute("aria-expanded", "false");
+
+      // 닫을 때: modal:false
+      sendSession({ modal: false });
+      iframe.classList.add("closing");
 
       var onEnd = function (ev) {
         if (ev && ev.target !== iframe) return;
