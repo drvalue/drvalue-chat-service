@@ -135,15 +135,13 @@
     // 이벤트
     btnClose.addEventListener("pointerdown", function (e) {
       e.preventDefault();
-      e.stopPropagation();
       closePanel();
     });
 
     // 일부 환경에서 click이 추가로 발생할 수 있어 부모 토글까지 차단만 함
     btnClose.addEventListener("click", function (e) {
       e.preventDefault();
-      e.stopPropagation();
-      // closePanel() 호출 안 함 (중복 방지)
+      closePanel();
     });
 
     btn.appendChild(btnClose);
