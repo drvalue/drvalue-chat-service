@@ -132,7 +132,28 @@
 
     btn.appendChild(btnClose);
 
-    btnClose.addEventListener("click", closePanel);
+    // 닫기 버튼 클릭 시: 버블링 막고 닫기
+    btnClose.setAttribute("role", "button");
+    btnClose.setAttribute("aria-label", "채팅 패널 닫기");
+    btnClose.tabIndex = 0;
+
+    function onCloseClick(e) {
+      e.preventDefault();
+      e.stopPropagation(); // 부모(btn)의 토글 클릭 막기
+      closePanel();
+    }
+
+    function onCloseKey(e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        e.stopPropagation();
+        closePanel();
+      }
+    }
+
+    btnClose.addEventListener("pointerdown", onCloseClick);
+    btnClose.addEventListener("click", onCloseClick);
+    btnClose.addEventListener("keydown", onCloseKey);
 
     // 오버레이
     overlay = document.createElement("div");
