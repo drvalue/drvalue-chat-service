@@ -33,7 +33,7 @@
         position: fixed; bottom: 20px; width: 60px; height: 60px; border-radius: 50%;
         background: linear-gradient(116deg, #D5D9EB -10%, #717BBC 50%, #3E4784 90%);
         color: #fff; display: flex; align-items: center; justify-content: center;
-        cursor: pointer; z-index: 2147483647; box-shadow: 0 4px 12px rgba(0,0,0,.2);
+        cursor: pointer; z-index: 10000000; box-shadow: 0 4px 12px rgba(0,0,0,.2);
         font-size: 24px; font-family: Arial, sans-serif;
         animation: mycbw-pop 520ms cubic-bezier(.2,.75,.2,1);
         transition: transform 220ms ease, box-shadow 220ms ease;
