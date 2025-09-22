@@ -14,7 +14,32 @@
   var cfg = window.MyChatbotWidget || {};
   var botUrl = cfg.url || "https://chat.growxd.co.kr/user/home";
   var side = cfg.position === "left" ? "left" : "right";
-  var size = cfg.size || { width: 500, height: 720 };
+  var baseSize = cfg.size || { width: 500, height: 720 };
+
+  // 모바일 반응형 크기 계산
+  function getResponsiveSize() {
+    var isMobile = window.innerWidth <= 768;
+    var isSmallMobile = window.innerWidth <= 480;
+
+    if (isSmallMobile) {
+      // 매우 작은 모바일 (320px~480px)
+      return {
+        width: Math.min(window.innerWidth - 40, 400), // 화면 너비에서 여백 40px 제외
+        height: Math.min(window.innerHeight * 0.8, 600), // 화면 높이의 80%
+      };
+    } else if (isMobile) {
+      // 일반 모바일 (481px~768px)
+      return {
+        width: Math.min(window.innerWidth - 60, 450),
+        height: Math.min(window.innerHeight * 0.75, 650),
+      };
+    } else {
+      // 데스크톱
+      return baseSize;
+    }
+  }
+
+  var size = getResponsiveSize();
 
   var btn, overlay, iframe;
   var swallowNextBtnClick = false;
