@@ -70,8 +70,39 @@
 
       .mycbw-btn .mycbw-btn-close { display: none; }
       .mycbw-btn.open .mycbw-btn-close { display: flex; }
+      
+      /* 모바일 전용 전체 화면 */
+      @media (max-width: 768px) {
+        .mycbw-frame {
+          inset: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          border-radius: 0 !important;
+          border: 0 !important;
+          bottom: 0 !important;
+          right: 0 !important;
+          left: 0 !important;
+          transform: translateY(0) scale(1); /* 부드럽게 풀스크린 */
+        }
+        .mycbw-mob-close.open { display: block; }
+      }
+
+      /* 모바일 상단 닫기 버튼(프레임 위에 떠서 덮는 형태) */
+      .mycbw-mob-close {
+        position: fixed; top: 12px; right: 12px;
+        width: 40px; height: 40px; border: 0; border-radius: 9999px;
+        background: rgba(0,0,0,.55); color: #fff; font-size: 26px; line-height: 40px; text-align: center;
+        z-index: 2147483647; display: none; cursor: pointer;
+        box-shadow: 0 6px 18px rgba(0,0,0,.25);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .mycbw-mob-close:active { transform: scale(.96); }
     `;
     document.head.appendChild(style);
+  }
+
+  function isMobile() {
+    return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
   }
 
   function run() {
@@ -149,6 +180,18 @@
     });
 
     btn.appendChild(btnClose);
+
+    // 모바일 상단 닫기 버튼(iframe 위에 떠있음)
+    var mobClose = document.createElement("button");
+    mobClose.className = "mycbw-mob-close";
+    mobClose.setAttribute("aria-label", "닫기");
+    mobClose.innerHTML = "&times;";
+    mobClose.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closePanel();
+    });
+    document.body.appendChild(mobClose);
 
     // 오버레이
     overlay = document.createElement("div");
@@ -241,6 +284,12 @@
       iframe.classList.remove("closing");
       iframe.classList.add("open");
 
+      // 모바일: 풀스크린 시 바디 스크롤 잠금 + 상단 닫기 버튼 표시
+      if (isMobile()) {
+        document.documentElement.style.overflow = "hidden";
+        mobClose.classList.add("open");
+      }
+
       // 열 때: modal:true
       sendSession({ modal: true });
       startHeartbeat();
@@ -259,6 +308,10 @@
       sendSession({ modal: false });
       iframe.classList.add("closing");
 
+      // 모바일: 원복
+      document.documentElement.style.overflow = "";
+      mobClose.classList.remove("open");
+
       var onEnd = function (ev) {
         if (ev && ev.target !== iframe) return;
         iframe.classList.remove("open");
@@ -269,7 +322,7 @@
       iframe.addEventListener("transitionend", onEnd);
     }
 
-    btn.addEventListener("click", function () {
+    btn.addEventListener("click", function (e) {
       if (swallowNextBtnClick) {
         // X 버튼에서 올라온 합성 클릭 한 번만 먹어치움
         swallowNextBtnClick = false;
@@ -284,6 +337,22 @@
       if (e.key === "Escape") closePanel();
     });
 
+    // 화면 크기 변경 시 위젯 크기 업데이트
+    var resizeTimeout;
+    window.addEventListener("resize", function () {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(updateWidgetSize, 250); // 디바운싱
+
+      // 창 크기 바뀔 때 상태 싱크
+      if (isOpen && isMobile()) {
+        document.documentElement.style.overflow = "hidden";
+        mobClose.classList.add("open");
+      } else {
+        document.documentElement.style.overflow = "";
+        mobClose.classList.remove("open");
+      }
+    });
+
     // 페이지 이탈 시 정리
     window.addEventListener("beforeunload", function () {
       // 페이지 떠날 때만 정리
@@ -296,6 +365,9 @@
       clearInterval(window[FLAG]._hb);
     } catch {}
     try {
+      document.documentElement.style.overflow = "";
+    } catch {}
+    try {
       btn && btn.remove();
     } catch {}
     try {
@@ -303,6 +375,9 @@
     } catch {}
     try {
       iframe && iframe.remove();
+    } catch {}
+    try {
+      document.querySelector(".mycbw-mob-close")?.remove();
     } catch {}
     try {
       document.getElementById("mycbw-style")?.remove();
