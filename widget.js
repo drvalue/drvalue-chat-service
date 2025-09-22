@@ -105,6 +105,15 @@
     return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
   }
 
+  // 위젯 크기 업데이트 함수
+  function updateWidgetSize() {
+    var newSize = getResponsiveSize();
+    if (iframe) {
+      iframe.style.width = newSize.width + "px";
+      iframe.style.height = newSize.height + "px";
+    }
+  }
+
   function run() {
     injectStyles();
 
@@ -186,11 +195,26 @@
     mobClose.className = "mycbw-mob-close";
     mobClose.setAttribute("aria-label", "닫기");
     mobClose.innerHTML = "&times;";
+
+    // 클릭 이벤트 (데스크톱)
     mobClose.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
       closePanel();
     });
+
+    // 터치 이벤트 (모바일)
+    mobClose.addEventListener("touchstart", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    mobClose.addEventListener("touchend", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closePanel();
+    });
+
     document.body.appendChild(mobClose);
 
     // 오버레이
@@ -322,12 +346,29 @@
       iframe.addEventListener("transitionend", onEnd);
     }
 
+    // 클릭 이벤트 (데스크톱)
     btn.addEventListener("click", function (e) {
       if (swallowNextBtnClick) {
         // X 버튼에서 올라온 합성 클릭 한 번만 먹어치움
         swallowNextBtnClick = false;
         e.preventDefault();
         e.stopPropagation();
+        return;
+      }
+      isOpen ? closePanel() : openPanel();
+    });
+
+    // 터치 이벤트 (모바일)
+    btn.addEventListener("touchstart", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    btn.addEventListener("touchend", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (swallowNextBtnClick) {
+        swallowNextBtnClick = false;
         return;
       }
       isOpen ? closePanel() : openPanel();
