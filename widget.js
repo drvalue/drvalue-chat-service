@@ -175,7 +175,7 @@
     // 버튼
     btn = document.createElement("div");
     btn.className = "mycbw-btn";
-    // 위치는 JS로만 제어 (좌우/상하 하드코딩 금지)
+    // 위치는 JS로만 제어
     btn.innerHTML = `
       <svg width="45" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
