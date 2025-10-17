@@ -1,6 +1,6 @@
 (function () {
   const FLAG = "__MY_CHATBOT_WIDGET__";
-  const VERSION = "2025-08-29:02";
+  const VERSION = "2025/10/17:1102-full";
 
   if (window[FLAG]?.teardown) {
     try {
@@ -11,43 +11,62 @@
   }
   window[FLAG] = { version: VERSION };
 
+  // ===== 설정/기본값 =====
   var cfg = window.MyChatbotWidget || {};
   var botUrl = cfg.url || "https://chat.growxd.co.kr/user/home";
-  var side = cfg.position === "left" ? "left" : "right";
+
+  // 위치 제어용 상태 (기본: 오른쪽-하단 20px)
+  var anchor = {
+    x: cfg.anchor?.x || "right", // "left" | "right"
+    y: cfg.anchor?.y || "bottom", // "top"  | "bottom"
+  };
+  var offset = {
+    x: cfg.offset?.x ?? 20,
+    y: cfg.offset?.y ?? 20,
+  };
+
+  // 버튼/패널 기본 크기
   var baseSize = cfg.size || { width: 500, height: 720 };
 
-  // 모바일 반응형 크기 계산
+  // 데스크톱/모바일 반응형 크기 계산
   function getResponsiveSize() {
     var isMobile = window.innerWidth <= 768;
     var isSmallMobile = window.innerWidth <= 480;
 
     if (isSmallMobile) {
-      // 매우 작은 모바일 (320px~480px)
       return {
-        width: Math.min(window.innerWidth - 40, 400), // 화면 너비에서 여백 40px 제외
-        height: Math.min(window.innerHeight * 0.8, 600), // 화면 높이의 80%
+        width: Math.min(window.innerWidth - 40, 400),
+        height: Math.min(window.innerHeight * 0.8, 600),
       };
     } else if (isMobile) {
-      // 일반 모바일 (481px~768px)
       return {
         width: Math.min(window.innerWidth - 60, 450),
         height: Math.min(window.innerHeight * 0.75, 650),
       };
     } else {
-      // 데스크톱
       return baseSize;
     }
   }
 
-  var size = getResponsiveSize();
+  // ===== 전역 노출 API (대시보드/콘솔에서 호출 가능) =====
+  window[FLAG].setPosition = function (next) {
+    if (next?.anchor) anchor = { ...anchor, ...next.anchor };
+    if (next?.offset) offset = { ...offset, ...next.offset };
+    if (next?.size) baseSize = { ...baseSize, ...next.size };
+    updateWidgetSize();
+    updateWidgetPosition();
+  };
 
-  var btn, overlay, iframe;
+  // ===== DOM refs =====
+  var btn, overlay, iframe, mobClose;
   var swallowNextBtnClick = false;
 
+  // ===== 스타일 주입 =====
   function injectStyles() {
     if (document.getElementById("mycbw-style")) return;
     var style = document.createElement("style");
     style.id = "mycbw-style";
+    var size = getResponsiveSize();
     style.textContent = `
       @keyframes mycbw-pop {
         0%   { transform: translateY(16px) scale(.92); opacity: 0; }
@@ -55,7 +74,7 @@
         100% { transform: translateY(0) scale(1); opacity: 1; }
       }
       .mycbw-btn {
-        position: fixed; bottom: 20px; width: 60px; height: 60px; border-radius: 50%;
+        position: fixed; width: 60px; height: 60px; border-radius: 50%;
         background: linear-gradient(116deg, #D5D9EB -10%, #717BBC 50%, #3E4784 90%);
         color: #fff; display: flex; align-items: center; justify-content: center;
         cursor: pointer; z-index: 10000000; box-shadow: 0 4px 12px rgba(0,0,0,.2);
@@ -66,7 +85,6 @@
       .mycbw-btn:hover { transform: translateY(-2px) scale(1.04); }
       .mycbw-btn:active { transform: translateY(0) scale(.98); }
 
-      /* 투명 오버레이(클릭 막지 않음) */
       .mycbw-overlay {
         position: fixed; inset: 0; background: transparent;
         opacity: 0; visibility: hidden; pointer-events: none;
@@ -74,9 +92,8 @@
       }
       .mycbw-overlay.open { opacity: 1; visibility: visible; }
 
-      /* 패널: 기본은 숨김 상태 */
       .mycbw-frame {
-        position: fixed; bottom: 90px;
+        position: fixed; /* 위치는 JS에서만 제어 */
         width: ${size.width}px; height: ${size.height}px;
         border: 1px solid #ddd; border-radius: 16px; background: #fff; overflow: hidden;
         z-index: 2147483646; box-shadow: 0 14px 40px rgba(0,0,0,.28);
@@ -84,11 +101,9 @@
         transition: opacity 260ms cubic-bezier(.2,.75,.2,1), transform 260ms cubic-bezier(.2,.75,.2,1);
         will-change: opacity, transform;
       }
-      /* 열림 상태: 보이면서 제자리 */
       .mycbw-frame.open {
         opacity: 1; transform: translateY(0) scale(1); visibility: visible; pointer-events: auto;
       }
-      /* 닫힘 애니 중: 눈에 보이게 두고(visibility:visible), opacity/transform만 원래 위치로 */
       .mycbw-frame.closing {
         opacity: 0; transform: translateY(12px) scale(.98); visibility: visible; pointer-events: none;
       }
@@ -96,23 +111,17 @@
       .mycbw-btn .mycbw-btn-close { display: none; }
       .mycbw-btn.open .mycbw-btn-close { display: flex; }
       
-      /* 모바일 전용 전체 화면 */
       @media (max-width: 768px) {
         .mycbw-frame {
           inset: 0 !important;
           width: 100vw !important;
           height: 100vh !important;
-          border-radius: 0 !important;
-          border: 0 !important;
-          bottom: 0 !important;
-          right: 0 !important;
-          left: 0 !important;
-          transform: translateY(0) scale(1); /* 부드럽게 풀스크린 */
+          border-radius: 0 !important; border: 0 !important;
+          transform: translateY(0) scale(1);
         }
         .mycbw-mob-close.open { display: block; }
       }
 
-      /* 모바일 상단 닫기 버튼(프레임 위에 떠서 덮는 형태) */
       .mycbw-mob-close {
         position: fixed; top: 12px; right: 12px;
         width: 40px; height: 40px; border: 0; border-radius: 9999px;
@@ -130,7 +139,27 @@
     return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
   }
 
-  // 위젯 크기 업데이트 함수
+  // ===== 위치 적용 =====
+  function applyPositionTo(el, extra = { yLift: 0 }) {
+    if (!el) return;
+    el.style.left = el.style.right = el.style.top = el.style.bottom = "";
+
+    // X축
+    if (anchor.x === "left") el.style.left = offset.x + "px";
+    else el.style.right = offset.x + "px";
+
+    // Y축
+    var oy = (offset.y || 0) + (extra.yLift || 0);
+    if (anchor.y === "top") el.style.top = oy + "px";
+    else el.style.bottom = oy + "px";
+  }
+
+  function updateWidgetPosition() {
+    applyPositionTo(btn, { yLift: 0 });
+    applyPositionTo(iframe, { yLift: 70 }); // 버튼 위로 살짝 띄움
+  }
+
+  // ===== 크기 반영 =====
   function updateWidgetSize() {
     var newSize = getResponsiveSize();
     if (iframe) {
@@ -139,13 +168,14 @@
     }
   }
 
+  // ===== 메인 런 =====
   function run() {
     injectStyles();
 
     // 버튼
     btn = document.createElement("div");
     btn.className = "mycbw-btn";
-    btn.style[side] = "20px";
+    // 위치는 JS로만 제어 (좌우/상하 하드코딩 금지)
     btn.innerHTML = `
       <svg width="45" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
@@ -180,66 +210,56 @@
       </svg>`;
     document.body.appendChild(btn);
 
+    // 버튼 내부 클로즈(작은 X)
     var btnClose = document.createElement("div");
     btnClose.className = "mycbw-btn-close";
     btnClose.innerHTML = "&times;";
-    btnClose.style.position = "absolute";
-    btnClose.style.top = "0";
-    btnClose.style.right = "0";
-    btnClose.style.width = "20px";
-    btnClose.style.height = "20px";
-    btnClose.style.borderRadius = "6px";
-    btnClose.style.background =
-      "linear-gradient(116deg, #717BBC 50%, #3E4784 90%)";
-    btnClose.style.color = "white";
-    btnClose.style.fontSize = "20px";
-    btnClose.style.alignItems = "center";
-    btnClose.style.justifyContent = "center";
-    btnClose.style.boxShadow = "0 2px 6px rgba(0,0,0,.2)";
-    btnClose.style.cursor = "pointer";
-
-    // 이벤트
+    Object.assign(btnClose.style, {
+      position: "absolute",
+      top: "0",
+      right: "0",
+      width: "20px",
+      height: "20px",
+      borderRadius: "6px",
+      background: "linear-gradient(116deg, #717BBC 50%, #3E4784 90%)",
+      color: "white",
+      fontSize: "20px",
+      alignItems: "center",
+      justifyContent: "center",
+      boxShadow: "0 2px 6px rgba(0,0,0,.2)",
+      cursor: "pointer",
+    });
     btnClose.addEventListener("pointerdown", function (e) {
       e.preventDefault();
       e.stopPropagation();
       swallowNextBtnClick = true;
       closePanel();
     });
-
-    // 일부 환경에서 click이 추가로 발생할 수 있어 부모 토글까지 차단만 함
     btnClose.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
-      // closePanel();
     });
-
     btn.appendChild(btnClose);
 
-    // 모바일 상단 닫기 버튼(iframe 위에 떠있음)
-    var mobClose = document.createElement("button");
+    // 모바일 상단 닫기 버튼
+    mobClose = document.createElement("button");
     mobClose.className = "mycbw-mob-close";
     mobClose.setAttribute("aria-label", "닫기");
     mobClose.innerHTML = "&times;";
-
-    // 클릭 이벤트 (데스크톱)
     mobClose.addEventListener("click", function (e) {
       e.preventDefault();
       e.stopPropagation();
       closePanel();
     });
-
-    // 터치 이벤트 (모바일)
     mobClose.addEventListener("touchstart", function (e) {
       e.preventDefault();
       e.stopPropagation();
     });
-
     mobClose.addEventListener("touchend", function (e) {
       e.preventDefault();
       e.stopPropagation();
       closePanel();
     });
-
     document.body.appendChild(mobClose);
 
     // 오버레이
@@ -250,13 +270,16 @@
     // 패널(iframe)
     iframe = document.createElement("iframe");
     iframe.className = "mycbw-frame";
-    iframe.style[side] = "20px";
+    iframe.setAttribute(
+      "allow",
+      "clipboard-read; clipboard-write; microphone; camera"
+    );
 
+    // 세션 전송/하트비트
     function getSession() {
       var m = document.cookie.match(/(?:^|;\s*)PHPSESSID=([^;]+)/);
       return m ? m[1] : null;
     }
-
     var targetOrigin;
     try {
       targetOrigin = new URL(botUrl).origin;
@@ -278,15 +301,14 @@
       );
     }
 
-    // 하트비트: 처음 열렸을 때부터 시작, 이후엔 계속 유지
-    var heartbeatId = null;
-    var heartbeatStarted = false;
+    var heartbeatId = null,
+      heartbeatStarted = false;
     function startHeartbeat() {
       if (heartbeatStarted) return;
       heartbeatStarted = true;
       if (!heartbeatId) {
         heartbeatId = setInterval(sendSession, 10_000);
-        window[FLAG]._hb = heartbeatId; // ← 전역 플래그에 보관
+        window[FLAG]._hb = heartbeatId;
       }
     }
     function stopHeartbeat() {
@@ -297,70 +319,70 @@
       heartbeatStarted = false;
     }
 
-    // iframe 로드 시에는 전송/하트비트 시작하지 않음 (요구사항)
     iframe.addEventListener("load", function () {
-      // no-op
+      /* no-op (요구사항) */
     });
 
-    // 위젯 준비 신호: 하트비트가 시작된 이후라면 1회 더 전송(안전)
     window.addEventListener("message", function (e) {
-      if (targetOrigin !== "*" && e.origin !== targetOrigin) return;
-      if (e.data && e.data.type === "WIDGET_READY") {
+      // 보안 권장: origin 화이트리스트
+      // const ALLOWED = ["https://chat.growxd.co.kr", "https://admin.growxd.co.kr"];
+      // if (!ALLOWED.includes(e.origin)) return;
+
+      var d = e.data;
+
+      // iFrame 쪽에서 준비되었다고 알림
+      if (targetOrigin !== "*" && e.origin !== targetOrigin) {
+        // 아래의 WIDGET_CONFIG는 어드민 도메인에서 올 수도 있으니 여기서 바로 return하지 않음
+      }
+      if (d && d.type === "WIDGET_READY") {
         if (heartbeatStarted) sendSession();
+      }
+
+      // ===== 핵심: 원격 위치/크기 설정 수신 =====
+      if (d && d.type === "WIDGET_CONFIG" && d.payload) {
+        if (d.payload.anchor) anchor = { ...anchor, ...d.payload.anchor };
+        if (d.payload.offset) offset = { ...offset, ...d.payload.offset };
+        if (d.payload.size) {
+          baseSize = { ...baseSize, ...d.payload.size };
+          updateWidgetSize();
+        }
+        updateWidgetPosition();
       }
     });
 
-    iframe.setAttribute(
-      "allow",
-      "clipboard-read; clipboard-write; microphone; camera"
-    );
     iframe.src = botUrl;
     document.body.appendChild(iframe);
 
-    // 열림/닫힘 토글
-    var isOpen = false;
+    // 최초 위치/크기 적용
+    updateWidgetSize();
+    updateWidgetPosition();
 
+    // 열림/닫힘
+    var isOpen = false;
     function openPanel() {
       if (isOpen) return;
       isOpen = true;
-      console.log("open!!");
-
-      // 플로팅 버튼: 열림 상태 클래스 + 접근성 상태
       btn.classList.add("open");
       btn.setAttribute("aria-expanded", "true");
-
       overlay.classList.add("open");
       iframe.classList.remove("closing");
       iframe.classList.add("open");
-
-      // 모바일: 풀스크린 시 바디 스크롤 잠금 + 상단 닫기 버튼 표시
       if (isMobile()) {
         document.documentElement.style.overflow = "hidden";
         mobClose.classList.add("open");
       }
-
-      // 열 때: modal:true
       sendSession({ modal: true });
       startHeartbeat();
     }
-
     function closePanel() {
       if (!isOpen) return;
       isOpen = false;
-      console.log("close!!");
-
-      // 플로팅 버튼: 닫힘 상태 클래스 + 접근성 상태
       btn.classList.remove("open");
       btn.setAttribute("aria-expanded", "false");
-
-      // 닫을 때: modal:false
       sendSession({ modal: false });
       iframe.classList.add("closing");
-
-      // 모바일: 원복
       document.documentElement.style.overflow = "";
       mobClose.classList.remove("open");
-
       var onEnd = function (ev) {
         if (ev && ev.target !== iframe) return;
         iframe.classList.remove("open");
@@ -371,10 +393,9 @@
       iframe.addEventListener("transitionend", onEnd);
     }
 
-    // 클릭 이벤트 (데스크톱)
+    // 버튼 이벤트
     btn.addEventListener("click", function (e) {
       if (swallowNextBtnClick) {
-        // X 버튼에서 올라온 합성 클릭 한 번만 먹어치움
         swallowNextBtnClick = false;
         e.preventDefault();
         e.stopPropagation();
@@ -382,13 +403,10 @@
       }
       isOpen ? closePanel() : openPanel();
     });
-
-    // 터치 이벤트 (모바일)
     btn.addEventListener("touchstart", function (e) {
       e.preventDefault();
       e.stopPropagation();
     });
-
     btn.addEventListener("touchend", function (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -403,13 +421,15 @@
       if (e.key === "Escape") closePanel();
     });
 
-    // 화면 크기 변경 시 위젯 크기 업데이트
+    // 리사이즈: 크기 + 위치 재적용
     var resizeTimeout;
     window.addEventListener("resize", function () {
       clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(updateWidgetSize, 250); // 디바운싱
+      resizeTimeout = setTimeout(function () {
+        updateWidgetSize();
+        updateWidgetPosition();
+      }, 250);
 
-      // 창 크기 바뀔 때 상태 싱크
       if (isOpen && isMobile()) {
         document.documentElement.style.overflow = "hidden";
         mobClose.classList.add("open");
@@ -419,13 +439,13 @@
       }
     });
 
-    // 페이지 이탈 시 정리
+    // 페이지 이탈 시 하트비트 정리
     window.addEventListener("beforeunload", function () {
-      // 페이지 떠날 때만 정리
       stopHeartbeat();
     });
   }
 
+  // teardown
   window[FLAG].teardown = function () {
     try {
       clearInterval(window[FLAG]._hb);
