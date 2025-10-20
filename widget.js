@@ -20,13 +20,35 @@
     x: cfg.anchor?.x || "right", // "left" | "right"
     y: cfg.anchor?.y || "bottom", // "top"  | "bottom"
   };
+
+  // 초기 offset 설정 (PC/모바일 구분)
+  var hasCustomOffset = !!(
+    cfg.offset?.x !== undefined || cfg.offset?.y !== undefined
+  );
+  var isMobileInit = window.innerWidth <= 768;
   var offset = {
-    x: cfg.offset?.x ?? 20,
-    y: cfg.offset?.y ?? 20,
+    x: cfg.offset?.x ?? (isMobileInit ? 20 : 300),
+    y: cfg.offset?.y ?? (isMobileInit ? 20 : 470),
   };
 
   // 버튼/패널 기본 크기
   var baseSize = cfg.size || { width: 500, height: 720 };
+
+  // 데스크톱/모바일 반응형 오프셋 계산
+  function getResponsiveOffset() {
+    // 사용자가 명시적으로 설정한 경우 그 값 사용
+    if (hasCustomOffset) {
+      return offset;
+    }
+
+    // 아니면 화면 크기에 따른 기본값 사용
+    var isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      return { x: 20, y: 20 };
+    } else {
+      return { x: 300, y: 470 };
+    }
+  }
 
   // 데스크톱/모바일 반응형 크기 계산
   function getResponsiveSize() {
@@ -51,7 +73,10 @@
   // ===== 전역 노출 API (대시보드/콘솔에서 호출 가능) =====
   window[FLAG].setPosition = function (next) {
     if (next?.anchor) anchor = { ...anchor, ...next.anchor };
-    if (next?.offset) offset = { ...offset, ...next.offset };
+    if (next?.offset) {
+      offset = { ...offset, ...next.offset };
+      hasCustomOffset = true; // 명시적 설정 플래그
+    }
     if (next?.size) baseSize = { ...baseSize, ...next.size };
     updateWidgetSize();
     updateWidgetPosition();
@@ -144,12 +169,15 @@
     if (!el) return;
     el.style.left = el.style.right = el.style.top = el.style.bottom = "";
 
+    // 반응형 offset 사용
+    var currentOffset = getResponsiveOffset();
+
     // X축
-    if (anchor.x === "left") el.style.left = offset.x + "px";
-    else el.style.right = offset.x + "px";
+    if (anchor.x === "left") el.style.left = currentOffset.x + "px";
+    else el.style.right = currentOffset.x + "px";
 
     // Y축
-    var oy = (offset.y || 0) + (extra.yLift || 0);
+    var oy = (currentOffset.y || 0) + (extra.yLift || 0);
     if (anchor.y === "top") el.style.top = oy + "px";
     else el.style.bottom = oy + "px";
   }
@@ -341,7 +369,10 @@
       // ===== 핵심: 원격 위치/크기 설정 수신 =====
       if (d && d.type === "WIDGET_CONFIG" && d.payload) {
         if (d.payload.anchor) anchor = { ...anchor, ...d.payload.anchor };
-        if (d.payload.offset) offset = { ...offset, ...d.payload.offset };
+        if (d.payload.offset) {
+          offset = { ...offset, ...d.payload.offset };
+          hasCustomOffset = true; // 명시적 설정 플래그
+        }
         if (d.payload.size) {
           baseSize = { ...baseSize, ...d.payload.size };
           updateWidgetSize();
