@@ -21,7 +21,7 @@
     y: cfg.anchor?.y || "bottom", // "top"  | "bottom"
   };
 
-  // 초기 offset 설정 (PC/모바일 구분)
+  // 초기 offset 설정 (버튼 기준: PC에서 300px, 470px)
   var hasCustomOffset = !!(
     cfg.offset?.x !== undefined || cfg.offset?.y !== undefined
   );
@@ -34,20 +34,27 @@
   // 버튼/패널 기본 크기
   var baseSize = cfg.size || { width: 500, height: 720 };
 
-  // 데스크톱/모바일 반응형 오프셋 계산
-  function getResponsiveOffset() {
-    // 사용자가 명시적으로 설정한 경우 그 값 사용
+  // 버튼용 오프셋 (PC에서 300px, 470px)
+  function getButtonOffset() {
     if (hasCustomOffset) {
       return offset;
     }
 
-    // 아니면 화면 크기에 따른 기본값 사용
     var isMobile = window.innerWidth <= 768;
     if (isMobile) {
       return { x: 20, y: 20 };
     } else {
       return { x: 300, y: 470 };
     }
+  }
+
+  // 패널용 오프셋 (항상 20px, 20px)
+  function getPanelOffset() {
+    if (hasCustomOffset) {
+      return offset;
+    }
+
+    return { x: 20, y: 20 };
   }
 
   // 데스크톱/모바일 반응형 크기 계산
@@ -165,26 +172,26 @@
   }
 
   // ===== 위치 적용 =====
-  function applyPositionTo(el, extra = { yLift: 0 }) {
+  function applyPositionTo(el, options = {}) {
     if (!el) return;
     el.style.left = el.style.right = el.style.top = el.style.bottom = "";
 
-    // 반응형 offset 사용
-    var currentOffset = getResponsiveOffset();
+    // 버튼인지 패널인지에 따라 다른 offset 사용
+    var currentOffset = options.isButton ? getButtonOffset() : getPanelOffset();
 
     // X축
     if (anchor.x === "left") el.style.left = currentOffset.x + "px";
     else el.style.right = currentOffset.x + "px";
 
     // Y축
-    var oy = (currentOffset.y || 0) + (extra.yLift || 0);
+    var oy = currentOffset.y;
     if (anchor.y === "top") el.style.top = oy + "px";
     else el.style.bottom = oy + "px";
   }
 
   function updateWidgetPosition() {
-    applyPositionTo(btn, { yLift: 0 });
-    applyPositionTo(iframe, { yLift: 70 }); // 버튼 위로 살짝 띄움
+    applyPositionTo(btn, { isButton: true });
+    applyPositionTo(iframe, { isButton: false }); // 패널은 항상 20px
   }
 
   // ===== 크기 반영 =====
