@@ -151,7 +151,6 @@
           border-radius: 0 !important; border: 0 !important;
           transform: translateY(0) scale(1);
         }
-        .mycbw-mob-close.open { display: block; }
       }
 
       .mycbw-mob-close {
@@ -162,6 +161,7 @@
         box-shadow: 0 6px 18px rgba(0,0,0,.25);
         -webkit-tap-highlight-color: transparent;
       }
+      .mycbw-mob-close.open { display: block; }
       .mycbw-mob-close:active { transform: scale(.96); }
     `;
     document.head.appendChild(style);
@@ -407,8 +407,8 @@
       iframe.classList.add("open");
       if (isMobile()) {
         document.documentElement.style.overflow = "hidden";
-        mobClose.classList.add("open");
       }
+      mobClose.classList.add("open"); // PC에서도 X버튼 표시
       sendSession({ modal: true });
       startHeartbeat();
     }
@@ -468,8 +468,10 @@
         updateWidgetPosition();
       }, 250);
 
-      if (isOpen && isMobile()) {
-        document.documentElement.style.overflow = "hidden";
+      if (isOpen) {
+        if (isMobile()) {
+          document.documentElement.style.overflow = "hidden";
+        }
         mobClose.classList.add("open");
       } else {
         document.documentElement.style.overflow = "";
