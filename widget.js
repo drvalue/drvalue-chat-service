@@ -1,6 +1,6 @@
 (function () {
   const FLAG = "__MY_CHATBOT_WIDGET__";
-  const VERSION = "2025/10/17:1102-full";
+  const VERSION = "2025/10/27:mobile-viewport-fix"; // 모바일 브라우저 UI 대응 개선
 
   if (window[FLAG]?.teardown) {
     try {
@@ -116,6 +116,15 @@
       }
       .mycbw-btn:hover { transform: translateY(-2px) scale(1.04); }
       .mycbw-btn:active { transform: translateY(0) scale(.98); }
+      
+      @media (max-width: 768px) {
+        .mycbw-btn {
+          /* 모바일에서 safe area 고려 */
+          margin-bottom: env(safe-area-inset-bottom);
+          margin-right: env(safe-area-inset-right);
+          margin-left: env(safe-area-inset-left);
+        }
+      }
 
       .mycbw-overlay {
         position: fixed; inset: 0; background: transparent;
@@ -132,6 +141,7 @@
         opacity: 0; transform: translateY(12px) scale(.98); visibility: hidden; pointer-events: none;
         transition: opacity 260ms cubic-bezier(.2,.75,.2,1), transform 260ms cubic-bezier(.2,.75,.2,1);
         will-change: opacity, transform;
+        box-sizing: border-box; /* safe area inset padding을 고려한 박스 크기 */
       }
       .mycbw-frame.open {
         opacity: 1; transform: translateY(0) scale(1); visibility: visible; pointer-events: auto;
@@ -147,9 +157,15 @@
         .mycbw-frame {
           inset: 0 !important;
           width: 100vw !important;
-          height: 100vh !important;
+          height: 100dvh !important; /* dynamic viewport height로 브라우저 UI 고려 */
+          max-height: -webkit-fill-available !important; /* iOS Safari 지원 */
           border-radius: 0 !important; border: 0 !important;
           transform: translateY(0) scale(1);
+          /* Safe area inset 적용 */
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+          padding-left: env(safe-area-inset-left);
+          padding-right: env(safe-area-inset-right);
         }
       }
 
@@ -166,8 +182,9 @@
       
       @media (max-width: 768px) {
         .mycbw-mob-close {
-          top: 12px !important;
-          right: 12px !important;
+          /* Safe area를 고려한 위치 설정 */
+          top: calc(12px + env(safe-area-inset-top)) !important;
+          right: calc(12px + env(safe-area-inset-right)) !important;
         }
       }
     `;
@@ -431,7 +448,12 @@
       iframe.classList.remove("closing");
       iframe.classList.add("open");
       if (isMobile()) {
+        // 모바일에서 배경 스크롤 방지
         document.documentElement.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
+        document.body.style.position = "fixed";
+        document.body.style.width = "100%";
+        document.body.style.height = "100%";
       }
       updateCloseButtonPosition(); // 닫기 버튼 위치 업데이트
       mobClose.classList.add("open"); // PC에서도 X버튼 표시
@@ -445,7 +467,12 @@
       btn.setAttribute("aria-expanded", "false");
       sendSession({ modal: false });
       iframe.classList.add("closing");
+      // 모바일에서 설정한 스타일 모두 리셋
       document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
       mobClose.classList.remove("open");
       var onEnd = function (ev) {
         if (ev && ev.target !== iframe) return;
@@ -497,10 +524,24 @@
       if (isOpen) {
         if (isMobile()) {
           document.documentElement.style.overflow = "hidden";
+          document.body.style.overflow = "hidden";
+          document.body.style.position = "fixed";
+          document.body.style.width = "100%";
+          document.body.style.height = "100%";
+        } else {
+          document.documentElement.style.overflow = "";
+          document.body.style.overflow = "";
+          document.body.style.position = "";
+          document.body.style.width = "";
+          document.body.style.height = "";
         }
         mobClose.classList.add("open");
       } else {
         document.documentElement.style.overflow = "";
+        document.body.style.overflow = "";
+        document.body.style.position = "";
+        document.body.style.width = "";
+        document.body.style.height = "";
         mobClose.classList.remove("open");
       }
     });
@@ -518,6 +559,10 @@
     } catch {}
     try {
       document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
     } catch {}
     try {
       btn && btn.remove();
