@@ -170,7 +170,8 @@
       }
 
       .mycbw-mob-close {
-        position: fixed; /* 위치는 JS에서 제어 */
+        position: fixed;
+        right: 20px; bottom: 20px;
         width: 40px; height: 40px; border: 0; border-radius: 9999px;
         background: rgba(0,0,0,.55); color: #fff; font-size: 26px; line-height: 40px; text-align: center;
         z-index: 2147483647; display: none; cursor: pointer;
@@ -185,6 +186,7 @@
           /* Safe area를 고려한 위치 설정 */
           top: calc(12px + env(safe-area-inset-top)) !important;
           right: calc(12px + env(safe-area-inset-right)) !important;
+          bottom: auto !important;
         }
       }
     `;
@@ -216,23 +218,6 @@
   function updateWidgetPosition() {
     applyPositionTo(btn, { isButton: true });
     applyPositionTo(iframe, { isButton: false }); // 패널은 항상 20px
-    updateCloseButtonPosition();
-  }
-
-  // 닫기 버튼 위치 업데이트 (PC에서는 패널 기준, 모바일은 화면 기준)
-  function updateCloseButtonPosition() {
-    if (!mobClose) return;
-    if (isMobile()) return; // 모바일은 CSS로 처리
-
-    // PC: 패널을 기준으로 위치 계산
-    var panelOffset = getPanelOffset();
-    var panelSize = getResponsiveSize();
-
-    // 패널의 오른쪽 위 모서리 계산
-    // right: panelOffset.x (패널과 같은 위치)
-    // bottom: panelOffset.y + panelSize.height - 버튼높이 - 여백
-    mobClose.style.right = panelOffset.x + 12 + "px";
-    mobClose.style.bottom = panelOffset.y + panelSize.height - 52 + "px"; // 40px(버튼) + 12px(여백)
   }
 
   // ===== 크기 반영 =====
@@ -242,7 +227,6 @@
       iframe.style.width = newSize.width + "px";
       iframe.style.height = newSize.height + "px";
     }
-    updateCloseButtonPosition(); // 크기 변경 시 닫기 버튼 위치도 업데이트
   }
 
   // ===== 메인 런 =====
@@ -455,7 +439,6 @@
         document.body.style.width = "100%";
         document.body.style.height = "100%";
       }
-      updateCloseButtonPosition(); // 닫기 버튼 위치 업데이트
       mobClose.classList.add("open"); // PC에서도 X버튼 표시
       sendSession({ modal: true });
       startHeartbeat();
