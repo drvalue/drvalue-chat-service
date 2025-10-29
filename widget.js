@@ -20,42 +20,13 @@
     x: cfg.anchor?.x || "right", // "left" | "right"
     y: cfg.anchor?.y || "bottom", // "top"  | "bottom"
   };
-
-  // 초기 offset 설정 (버튼 기준: PC에서 300px, 470px)
-  var hasCustomOffset = !!(
-    cfg.offset?.x !== undefined || cfg.offset?.y !== undefined
-  );
-  var isMobileInit = window.innerWidth <= 768;
   var offset = {
-    x: cfg.offset?.x ?? (isMobileInit ? 20 : 300),
-    y: cfg.offset?.y ?? (isMobileInit ? 20 : 470),
+    x: cfg.offset?.x ?? 20,
+    y: cfg.offset?.y ?? 20,
   };
 
   // 버튼/패널 기본 크기
   var baseSize = cfg.size || { width: 500, height: 720 };
-
-  // 버튼용 오프셋 (PC에서 300px, 470px)
-  function getButtonOffset() {
-    if (hasCustomOffset) {
-      return offset;
-    }
-
-    var isMobile = window.innerWidth <= 768;
-    if (isMobile) {
-      return { x: 20, y: 20 };
-    } else {
-      return { x: 300, y: 470 };
-    }
-  }
-
-  // 패널용 오프셋 (항상 20px, 20px)
-  function getPanelOffset() {
-    if (hasCustomOffset) {
-      return offset;
-    }
-
-    return { x: 20, y: 20 };
-  }
 
   // 데스크톱/모바일 반응형 크기 계산
   function getResponsiveSize() {
@@ -80,10 +51,7 @@
   // ===== 전역 노출 API (대시보드/콘솔에서 호출 가능) =====
   window[FLAG].setPosition = function (next) {
     if (next?.anchor) anchor = { ...anchor, ...next.anchor };
-    if (next?.offset) {
-      offset = { ...offset, ...next.offset };
-      hasCustomOffset = true; // 명시적 설정 플래그
-    }
+    if (next?.offset) offset = { ...offset, ...next.offset };
     if (next?.size) baseSize = { ...baseSize, ...next.size };
     updateWidgetSize();
     updateWidgetPosition();
@@ -167,28 +135,21 @@
           padding-left: env(safe-area-inset-left);
           padding-right: env(safe-area-inset-right);
         }
+        .mycbw-mob-close.open { display: block; }
       }
 
       .mycbw-mob-close {
         position: fixed;
-        right: 20px; bottom: 20px;
+        /* Safe area를 고려한 위치 설정 */
+        top: calc(12px + env(safe-area-inset-top));
+        right: calc(12px + env(safe-area-inset-right));
         width: 40px; height: 40px; border: 0; border-radius: 9999px;
         background: rgba(0,0,0,.55); color: #fff; font-size: 26px; line-height: 40px; text-align: center;
         z-index: 2147483647; display: none; cursor: pointer;
         box-shadow: 0 6px 18px rgba(0,0,0,.25);
         -webkit-tap-highlight-color: transparent;
       }
-      .mycbw-mob-close.open { display: block; }
       .mycbw-mob-close:active { transform: scale(.96); }
-      
-      @media (max-width: 768px) {
-        .mycbw-mob-close {
-          /* Safe area를 고려한 위치 설정 */
-          top: calc(12px + env(safe-area-inset-top)) !important;
-          right: calc(12px + env(safe-area-inset-right)) !important;
-          bottom: auto !important;
-        }
-      }
     `;
     document.head.appendChild(style);
   }
@@ -198,26 +159,23 @@
   }
 
   // ===== 위치 적용 =====
-  function applyPositionTo(el, options = {}) {
+  function applyPositionTo(el, extra = { yLift: 0 }) {
     if (!el) return;
     el.style.left = el.style.right = el.style.top = el.style.bottom = "";
 
-    // 버튼인지 패널인지에 따라 다른 offset 사용
-    var currentOffset = options.isButton ? getButtonOffset() : getPanelOffset();
-
     // X축
-    if (anchor.x === "left") el.style.left = currentOffset.x + "px";
-    else el.style.right = currentOffset.x + "px";
+    if (anchor.x === "left") el.style.left = offset.x + "px";
+    else el.style.right = offset.x + "px";
 
     // Y축
-    var oy = currentOffset.y;
+    var oy = (offset.y || 0) + (extra.yLift || 0);
     if (anchor.y === "top") el.style.top = oy + "px";
     else el.style.bottom = oy + "px";
   }
 
   function updateWidgetPosition() {
-    applyPositionTo(btn, { isButton: true });
-    applyPositionTo(iframe, { isButton: false }); // 패널은 항상 20px
+    applyPositionTo(btn, { yLift: 0 });
+    applyPositionTo(iframe, { yLift: 70 }); // 버튼 위로 살짝 띄움
   }
 
   // ===== 크기 반영 =====
@@ -402,10 +360,7 @@
       // ===== 핵심: 원격 위치/크기 설정 수신 =====
       if (d && d.type === "WIDGET_CONFIG" && d.payload) {
         if (d.payload.anchor) anchor = { ...anchor, ...d.payload.anchor };
-        if (d.payload.offset) {
-          offset = { ...offset, ...d.payload.offset };
-          hasCustomOffset = true; // 명시적 설정 플래그
-        }
+        if (d.payload.offset) offset = { ...offset, ...d.payload.offset };
         if (d.payload.size) {
           baseSize = { ...baseSize, ...d.payload.size };
           updateWidgetSize();
@@ -438,8 +393,8 @@
         document.body.style.position = "fixed";
         document.body.style.width = "100%";
         document.body.style.height = "100%";
+        mobClose.classList.add("open");
       }
-      mobClose.classList.add("open"); // PC에서도 X버튼 표시
       sendSession({ modal: true });
       startHeartbeat();
     }
@@ -504,20 +459,12 @@
         updateWidgetPosition();
       }, 250);
 
-      if (isOpen) {
-        if (isMobile()) {
-          document.documentElement.style.overflow = "hidden";
-          document.body.style.overflow = "hidden";
-          document.body.style.position = "fixed";
-          document.body.style.width = "100%";
-          document.body.style.height = "100%";
-        } else {
-          document.documentElement.style.overflow = "";
-          document.body.style.overflow = "";
-          document.body.style.position = "";
-          document.body.style.width = "";
-          document.body.style.height = "";
-        }
+      if (isOpen && isMobile()) {
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
+        document.body.style.position = "fixed";
+        document.body.style.width = "100%";
+        document.body.style.height = "100%";
         mobClose.classList.add("open");
       } else {
         document.documentElement.style.overflow = "";
