@@ -14,6 +14,7 @@
   // ===== 설정/기본값 =====
   var cfg = window.MyChatbotWidget || {};
   var botUrl = cfg.url || "https://chat.growxd.co.kr/user/home";
+  var tenantCode = cfg.tenantCode || "test";
 
   // 위치 제어용 상태 (기본: 오른쪽-하단 20px)
   var anchor = {
@@ -190,7 +191,13 @@
   // ===== API에서 위젯 위치 정보 가져오기 =====
   function fetchWidgetPosition() {
     fetch(
-      "https://chat.growxd.co.kr/api/serv/baseinfo/v1/company-setting/widget-position"
+      "https://chat.growxd.co.kr/api/serv/baseinfo/v1/company-setting/widget-position",
+      {
+        method: "GET",
+        headers: {
+          "x-tenant-code": tenantCode,
+        },
+      }
     )
       .then(function (response) {
         return response.json();
