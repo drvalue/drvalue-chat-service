@@ -187,6 +187,36 @@
     }
   }
 
+  // ===== API에서 위젯 위치 정보 가져오기 =====
+  function fetchWidgetPosition() {
+    fetch("/api/serv/baseinfo/v1/company-setting/widget-position")
+      .then(function (response) {
+        return response.json();
+      })
+      .then(function (result) {
+        if (result.status === 200 && result.data) {
+          try {
+            var positionData = JSON.parse(result.data);
+            if (positionData.anchor) {
+              anchor = { ...anchor, ...positionData.anchor };
+            }
+            if (positionData.offset) {
+              offset = { ...offset, ...positionData.offset };
+            }
+            // 위치 정보를 가져온 후 위치 업데이트
+            updateWidgetPosition();
+            console.log("[widget] Position loaded from API:", positionData);
+          } catch (e) {
+            console.warn("[widget] Failed to parse position data:", e);
+          }
+        }
+      })
+      .catch(function (error) {
+        console.warn("[widget] Failed to fetch widget position:", error);
+        // API 실패 시 기본값 사용
+      });
+  }
+
   // ===== 메인 런 =====
   function run() {
     injectStyles();
@@ -375,6 +405,9 @@
     // 최초 위치/크기 적용
     updateWidgetSize();
     updateWidgetPosition();
+
+    // API에서 위치 정보 가져오기 (비동기)
+    fetchWidgetPosition();
 
     // 열림/닫힘
     var isOpen = false;
