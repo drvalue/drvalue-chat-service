@@ -189,7 +189,9 @@
 
   // ===== API에서 위젯 위치 정보 가져오기 =====
   function fetchWidgetPosition() {
-    fetch("/api/serv/baseinfo/v1/company-setting/widget-position")
+    fetch(
+      "https://chat.growxd.co.kr/api/serv/baseinfo/v1/company-setting/widget-position"
+    )
       .then(function (response) {
         return response.json();
       })
