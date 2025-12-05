@@ -445,7 +445,7 @@
       isOpen = false;
       btn.classList.remove("open");
       btn.setAttribute("aria-expanded", "false");
-      sendSession({ modal: false });
+      // sendSession({ modal: false }); // 닫을때마다 로그아웃되던 로직 주석처리
       iframe.classList.add("closing");
       // 모바일에서 설정한 스타일 모두 리셋
       document.documentElement.style.overflow = "";
