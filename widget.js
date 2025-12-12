@@ -209,11 +209,10 @@
       expandToggle.style.display = "none";
       return;
     }
-    var rect = iframe.getBoundingClientRect();
     expandToggle.style.position = "fixed";
-    expandToggle.style.top = Math.max(8, rect.top + 12) + "px";
-    var right = Math.max(8, window.innerWidth - rect.right + 12);
-    expandToggle.style.right = right + "px";
+    // 고정 위치: 상단 65px, 오른쪽 40px
+    expandToggle.style.top = "65px";
+    expandToggle.style.right = "40px";
     expandToggle.style.left = "auto";
     expandToggle.style.display = "flex";
   }
@@ -399,11 +398,11 @@
     });
     document.body.appendChild(mobClose);
 
-    // 데스크탑 패널 우측 상단 확장/축소 버튼 (expand.svg / reduction.svg 인라인 사용)
+    // 데스크탑 패널 우측 상단 확장/축소 버튼 (icon.24.expand / icon.24.collapse 인라인 사용)
     var fullscreenIcon =
-      '<svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g clip-path="url(#clip0_1545_9841)"><path d="M8.5 5.5L13.5 0.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 0.5H13.5V4.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 5.5L0.5 0.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 0.5H0.5V4.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 8.5L13.5 13.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 13.5H13.5V9.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 8.5L0.5 13.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 13.5H0.5V9.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/></g><defs><clipPath id="clip0_1545_9841"><rect width="14" height="14" fill="white"/></clipPath></defs></svg>';
+      '<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.1465 13.1465C10.3417 12.9512 10.6583 12.9512 10.8535 13.1465C11.0488 13.3417 11.0488 13.6583 10.8535 13.8535L7.70703 17H10.5C10.7761 17 11 17.2239 11 17.5C11 17.7761 10.7761 18 10.5 18H6.5C6.22386 18 6 17.7761 6 17.5V13.5C6 13.2239 6.22386 13 6.5 13C6.77614 13 7 13.2239 7 13.5V16.293L10.1465 13.1465ZM17.5 6C17.7761 6 18 6.22386 18 6.5V10.5C18 10.7761 17.7761 11 17.5 11C17.2239 11 17 10.7761 17 10.5V7.70703L13.8535 10.8535C13.6583 11.0488 13.3417 11.0488 13.1465 10.8535C12.9512 10.6583 12.9512 10.3417 13.1465 10.1465L16.293 7H13.5C13.2239 7 13 6.77614 13 6.5C13 6.22386 13.2239 6 13.5 6H17.5Z" fill="#FFFFFF"/></svg>';
     var fullscreenExitIcon =
-      '<svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g clip-path="url(#clip0_1545_10014)"><path d="M0.5 13.5L4.5 9.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 9.5H4.5V13" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 13.5L9.5 9.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 9.5H9.5V13" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.5 0.5L4.5 4.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 4.5H4.5V1" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 0.5L9.5 4.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 4.5H9.5V1" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/></g><defs><clipPath id="clip0_1545_10014"><rect width="14" height="14" fill="white"/></clipPath></defs></svg>';
+      '<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10.5 13C10.7761 13 11 13.2239 11 13.5V17.5C11 17.7761 10.7761 18 10.5 18C10.2239 18 10 17.7761 10 17.5V14.707L6.85352 17.8535C6.65825 18.0488 6.34175 18.0488 6.14648 17.8535C5.95122 17.6583 5.95122 17.3417 6.14648 17.1465L9.29297 14H6.5C6.22386 14 6 13.7761 6 13.5C6 13.2239 6.22386 13 6.5 13H10.5ZM17.1465 6.14648C17.3417 5.95122 17.6583 5.95122 17.8535 6.14648C18.0488 6.34175 18.0488 6.65825 17.8535 6.85352L14.707 10H17.5C17.7761 10 18 10.2239 18 10.5C18 10.7761 17.7761 11 17.5 11H13.5C13.2239 11 13 10.7761 13 10.5V6.5C13 6.22386 13.2239 6 13.5 6C13.7761 6 14 6.22386 14 6.5V9.29297L17.1465 6.14648Z" fill="#FFFFFF"/></svg>';
 
     expandToggle = document.createElement("button");
     expandToggle.className = "mycbw-expand-toggle";
