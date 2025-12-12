@@ -209,10 +209,11 @@
       expandToggle.style.display = "none";
       return;
     }
+    var rect = iframe.getBoundingClientRect();
     expandToggle.style.position = "fixed";
-    // 고정 위치: 상단 65px, 오른쪽 40px
-    expandToggle.style.top = "65px";
-    expandToggle.style.right = "40px";
+    // 패널 기준: 상단에서 65px 아래, 패널 오른쪽에서 40px 안쪽
+    expandToggle.style.top = rect.top + 65 + "px";
+    expandToggle.style.right = window.innerWidth - rect.right + 40 + "px";
     expandToggle.style.left = "auto";
     expandToggle.style.display = "flex";
   }
