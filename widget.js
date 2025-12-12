@@ -212,8 +212,8 @@
     var rect = iframe.getBoundingClientRect();
     expandToggle.style.position = "fixed";
     // 패널 기준: 상단에서 65px 아래, 패널 오른쪽에서 40px 안쪽
-    expandToggle.style.top = rect.top + 45 + "px";
-    expandToggle.style.right = window.innerWidth - rect.right + 20 + "px";
+    expandToggle.style.top = rect.top + 15 + "px";
+    expandToggle.style.right = window.innerWidth - rect.right + -10 + "px";
     expandToggle.style.left = "auto";
     expandToggle.style.display = "flex";
   }
