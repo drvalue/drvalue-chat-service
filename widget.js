@@ -220,7 +220,9 @@
 
   function updateWidgetPosition() {
     applyPositionTo(btn, { yLift: 0 });
-    applyPositionTo(iframe, { yLift: 70 }); // 버튼 위로 살짝 띄움
+    // 확장 모드일 때는 bottom 100px 정도를 맞추도록 yLift를 조정
+    var iframeYOffset = !isExpanded || !offset ? 70 : 100 - (offset.y || 0); // bottom = offset.y + iframeYOffset ≈ 100
+    applyPositionTo(iframe, { yLift: iframeYOffset }); // 버튼 위로 살짝 띄움
     if (typeof updateExpandTogglePosition === "function") {
       updateExpandTogglePosition();
     }
@@ -234,17 +236,27 @@
       isExpanded = false;
       currentSize = base;
     } else {
-      currentSize = isExpanded
-        ? (function () {
-            var margin = 24;
-            var maxWidth = Math.max(0, window.innerWidth - margin * 2);
-            var maxHeight = Math.max(0, window.innerHeight - margin * 2);
-            return {
-              width: Math.min(maxWidth, Math.max(base.width, 520)),
-              height: Math.min(maxHeight, Math.max(base.height, 520)),
-            };
-          })()
-        : base;
+      if (isExpanded) {
+        // 높이: viewport 전체 높이에서 top 30, bottom 100을 뺀 나머지를 사용
+        var viewportH =
+          window.innerHeight || document.documentElement.clientHeight || 0;
+        var expandedHeight = Math.max(0, viewportH - (30 + 100));
+
+        // 너비: 기본 패널 너비에서 200px 확장, 단 화면을 넘지 않도록 최소 여백 20px 확보
+        var expandedWidth = base.width + 200;
+        var maxViewportW =
+          (window.innerWidth || document.documentElement.clientWidth || 0) - 40;
+        if (maxViewportW > 0) {
+          expandedWidth = Math.min(expandedWidth, maxViewportW);
+        }
+
+        currentSize = {
+          width: expandedWidth,
+          height: expandedHeight,
+        };
+      } else {
+        currentSize = base;
+      }
     }
     if (iframe) {
       iframe.style.width = currentSize.width + "px";
