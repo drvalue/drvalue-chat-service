@@ -49,6 +49,10 @@
     }
   }
 
+  // 데스크톱 패널 확장 상태 및 크기
+  var isExpanded = false;
+  var currentSize = getResponsiveSize();
+
   // ===== 전역 노출 API (대시보드/콘솔에서 호출 가능) =====
   window[FLAG].setPosition = function (next) {
     if (next?.anchor) anchor = { ...anchor, ...next.anchor };
@@ -59,7 +63,7 @@
   };
 
   // ===== DOM refs =====
-  var btn, overlay, iframe, mobClose;
+  var btn, overlay, iframe, mobClose, expandToggle;
   var swallowNextBtnClick = false;
 
   // ===== 스타일 주입 =====
@@ -151,6 +155,30 @@
         -webkit-tap-highlight-color: transparent;
       }
       .mycbw-mob-close:active { transform: scale(.96); }
+
+      .mycbw-expand-toggle {
+        position: fixed;
+        width: 40px; height: 40px; border: 0; border-radius: 9999px;
+        background: rgba(0,0,0,.55); color: #fff;
+        font-size: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 2147483647;
+        box-shadow: 0 6px 18px rgba(0,0,0,.25);
+        -webkit-tap-highlight-color: transparent;
+        padding: 0;
+      }
+      .mycbw-expand-toggle svg {
+        width: 24px;
+        height: 24px;
+      }
+      @media (max-width: 768px) {
+        .mycbw-expand-toggle {
+          display: none !important;
+        }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -174,17 +202,56 @@
     else el.style.bottom = oy + "px";
   }
 
+  // 데스크탑 패널 우측 상단 확장/축소 버튼 위치
+  function updateExpandTogglePosition() {
+    if (!expandToggle || !iframe || !iframe.classList.contains("open")) return;
+    if (isMobile()) {
+      expandToggle.style.display = "none";
+      return;
+    }
+    var rect = iframe.getBoundingClientRect();
+    expandToggle.style.position = "fixed";
+    expandToggle.style.top = Math.max(8, rect.top + 12) + "px";
+    var right = Math.max(8, window.innerWidth - rect.right + 12);
+    expandToggle.style.right = right + "px";
+    expandToggle.style.left = "auto";
+    expandToggle.style.display = "flex";
+  }
+
   function updateWidgetPosition() {
     applyPositionTo(btn, { yLift: 0 });
     applyPositionTo(iframe, { yLift: 70 }); // 버튼 위로 살짝 띄움
+    if (typeof updateExpandTogglePosition === "function") {
+      updateExpandTogglePosition();
+    }
   }
 
   // ===== 크기 반영 =====
   function updateWidgetSize() {
-    var newSize = getResponsiveSize();
+    var base = getResponsiveSize();
+    // 모바일에서는 확장 모드를 사용하지 않음
+    if (isMobile()) {
+      isExpanded = false;
+      currentSize = base;
+    } else {
+      currentSize = isExpanded
+        ? (function () {
+            var margin = 24;
+            var maxWidth = Math.max(0, window.innerWidth - margin * 2);
+            var maxHeight = Math.max(0, window.innerHeight - margin * 2);
+            return {
+              width: Math.min(maxWidth, Math.max(base.width, 520)),
+              height: Math.min(maxHeight, Math.max(base.height, 520)),
+            };
+          })()
+        : base;
+    }
     if (iframe) {
-      iframe.style.width = newSize.width + "px";
-      iframe.style.height = newSize.height + "px";
+      iframe.style.width = currentSize.width + "px";
+      iframe.style.height = currentSize.height + "px";
+    }
+    if (typeof updateExpandTogglePosition === "function") {
+      updateExpandTogglePosition();
     }
   }
 
@@ -320,6 +387,28 @@
     });
     document.body.appendChild(mobClose);
 
+    // 데스크탑 패널 우측 상단 확장/축소 버튼 (expand.svg / reduction.svg 인라인 사용)
+    var fullscreenIcon =
+      '<svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g clip-path="url(#clip0_1545_9841)"><path d="M8.5 5.5L13.5 0.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 0.5H13.5V4.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 5.5L0.5 0.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 0.5H0.5V4.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 8.5L13.5 13.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 13.5H13.5V9.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 8.5L0.5 13.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 13.5H0.5V9.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/></g><defs><clipPath id="clip0_1545_9841"><rect width="14" height="14" fill="white"/></clipPath></defs></svg>';
+    var fullscreenExitIcon =
+      '<svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g clip-path="url(#clip0_1545_10014)"><path d="M0.5 13.5L4.5 9.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 9.5H4.5V13" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 13.5L9.5 9.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 9.5H9.5V13" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M0.5 0.5L4.5 4.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 4.5H4.5V1" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 0.5L9.5 4.5" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 4.5H9.5V1" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"/></g><defs><clipPath id="clip0_1545_10014"><rect width="14" height="14" fill="white"/></clipPath></defs></svg>';
+
+    expandToggle = document.createElement("button");
+    expandToggle.className = "mycbw-expand-toggle";
+    expandToggle.setAttribute("aria-label", "확대");
+    expandToggle.innerHTML = fullscreenIcon;
+    expandToggle.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isMobile()) return;
+      isExpanded = !isExpanded;
+      updateWidgetSize();
+      expandToggle.setAttribute("aria-label", isExpanded ? "축소" : "확대");
+      expandToggle.innerHTML = isExpanded ? fullscreenExitIcon : fullscreenIcon;
+      updateExpandTogglePosition();
+    });
+    document.body.appendChild(expandToggle);
+
     // 오버레이
     overlay = document.createElement("div");
     overlay.className = "mycbw-overlay";
@@ -428,6 +517,10 @@
       overlay.classList.add("open");
       iframe.classList.remove("closing");
       iframe.classList.add("open");
+      if (!isMobile() && expandToggle) {
+        expandToggle.style.display = "flex";
+        updateExpandTogglePosition();
+      }
       if (isMobile()) {
         // 모바일에서 배경 스크롤 방지
         document.documentElement.style.overflow = "hidden";
@@ -447,6 +540,9 @@
       btn.setAttribute("aria-expanded", "false");
       // sendSession({ modal: false }); // 닫을때마다 로그아웃되던 로직 주석처리
       iframe.classList.add("closing");
+      // 확장 상태 초기화
+      isExpanded = false;
+      updateWidgetSize();
       // 모바일에서 설정한 스타일 모두 리셋
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
@@ -462,6 +558,9 @@
         iframe.removeEventListener("transitionend", onEnd);
       };
       iframe.addEventListener("transitionend", onEnd);
+      if (expandToggle) {
+        expandToggle.style.display = "none";
+      }
     }
 
     // 버튼 이벤트
@@ -499,6 +598,14 @@
       resizeTimeout = setTimeout(function () {
         updateWidgetSize();
         updateWidgetPosition();
+        if (expandToggle) {
+          if (isOpen && !isMobile()) {
+            expandToggle.style.display = "flex";
+            updateExpandTogglePosition();
+          } else {
+            expandToggle.style.display = "none";
+          }
+        }
       }, 250);
 
       if (isOpen && isMobile()) {
